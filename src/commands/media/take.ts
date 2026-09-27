@@ -4,34 +4,29 @@ import { layananStiker } from "../../services/media/sticker-service.js";
 
 export const perintahTake: PerintahBot = {
   nama: "take",
-  alias: ["colong", "wm"],
-  deskripsi: "Mengubah metadata nama paket dan pembuat pada stiker",
+  alias: ["colong"],
+  deskripsi: "Mengambil dan mengubah stiker menjadi foto",
   kategori: "sticker",
   jalankan: async (konteks: KonteksPerintah) => {
     const bufferMedia = await konteks.unduhMedia();
     if (!bufferMedia) {
-      await konteks.balas("Balas stiker dengan !take <NamaPaket> | <NamaPembuat>");
+      await konteks.balas("Balas (reply) stiker yang ingin diambil menjadi foto dengan !take atau !colong");
       return;
     }
 
-    const bagian = konteks.teksArgumen.split("|").map((item) => item.trim());
-    const namaPaket = bagian[0] || "Anya Bot";
-    const pembuat = bagian[1] || "github@bromanprjkt";
-
     try {
-      const gambar = await layananStiker.stikerKeGambar(bufferMedia);
-      const stikerBaru = await layananStiker.gambarKeStiker(gambar, {
-        namaPaket,
-        pembuat,
-      });
+      const bufferFoto = await layananStiker.stikerKeGambar(bufferMedia);
 
       await konteks.soket.sendMessage(
         konteks.idObrolan,
-        { sticker: stikerBaru },
+        {
+          image: bufferFoto,
+          caption: "Berikut foto hasil konversi stiker.",
+        },
         { quoted: konteks.pesanMentah }
       );
     } catch (kesalahan) {
-      await konteks.balas("Gagal memperbarui metadata stiker.");
+      await konteks.balas("Gagal mengambil stiker menjadi foto.");
     }
   },
 };
