@@ -50,11 +50,9 @@ coverage/
 *.lcov
 
 # Temporary Screenshots & Media Dumps
-image*.png
 test-*.png
 test-*.webp
 test-*.mp4
-!banner.png
 
 # OS & Editor
 .DS_Store
