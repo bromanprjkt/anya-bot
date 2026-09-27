@@ -71,7 +71,7 @@ export function buatPerintahMenu(registri: RegistriPerintah): PerintahBot {
         { kunci: "admin", label: "Khusus Admin Bot" },
       ];
 
-      let teksMenu = `*Anya Bot*\n`;
+      let teksMenu = `*Anya Bot* (v${konfigurasiEnv.versiBot})\n`;
       teksMenu += `Awalan: \`${awalan}\`\n\n`;
 
       for (const kategori of urutanKategori) {

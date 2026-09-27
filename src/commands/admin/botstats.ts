@@ -1,5 +1,6 @@
 import type { PerintahBot } from "../../core/command-registry.js";
 import type { KonteksPerintah } from "../../core/message-context.js";
+import { konfigurasiEnv } from "../../config/env.js";
 import os from "node:os";
 
 function formatDurasi(detikTotal: number): string {
@@ -35,6 +36,7 @@ export const perintahBotStats: PerintahBot = {
     const waktuAktifSistem = formatDurasi(os.uptime());
 
     let statistik = `*──「 Statistik Anya Bot 」──*\n\n`;
+    statistik += `• Versi: ${konfigurasiEnv.versiBot}\n`;
     statistik += `• Waktu Aktif Bot: ${waktuAktif}\n`;
     statistik += `• Waktu Aktif OS: ${waktuAktifSistem}\n`;
     statistik += `• Memori RSS: ${rssMB} MB\n`;

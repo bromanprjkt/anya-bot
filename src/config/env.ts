@@ -33,6 +33,7 @@ const skemaEnv = z.object({
       z.boolean()
     )
     .default(KONFIGURASI_BAWAAN.BACA_PESAN_OTOMATIS),
+  BOT_VERSION: z.string().default(KONFIGURASI_BAWAAN.VERSI_BOT),
 });
 
 export interface KonfigurasiEnv {
@@ -47,6 +48,7 @@ export interface KonfigurasiEnv {
   urlApiPengunduh: string;
   kunciApiPengunduh: string;
   bacaPesanOtomatis: boolean;
+  versiBot: string;
 }
 
 /**
@@ -83,6 +85,7 @@ export function uraiKonfigurasiEnv(
     urlApiPengunduh: data.DOWNLOADER_API_URL,
     kunciApiPengunduh: data.DOWNLOADER_API_KEY,
     bacaPesanOtomatis: data.AUTO_READ,
+    versiBot: data.BOT_VERSION,
   };
 }
 

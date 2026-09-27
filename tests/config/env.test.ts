@@ -12,6 +12,7 @@ describe("Penguraian Konfigurasi Lingkungan (Env)", () => {
     expect(hasil.direktoriSementara).toBe("./temp");
     expect(hasil.batasPekerjaanMediaBersamaan).toBe(2);
     expect(hasil.bacaPesanOtomatis).toBe(true);
+    expect(hasil.versiBot).toBe("0.1 beta");
   });
 
   it("harus berhasil mengurai nilai variabel lingkungan yang valid", () => {
