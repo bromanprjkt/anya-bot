@@ -72,11 +72,11 @@ describe("Layanan Pengunduh & Perintah Media", () => {
     expect(balasMock.mock.calls[0][0]).toContain("Sertakan tautan Instagram yang valid");
   });
 
-  it("penyedia apinexa harus mengenali url tiktok dan instagram", async () => {
-    const { PenyediaApinexa } = await import(
-      "../../src/services/downloader/apinexa-adapter.js"
+  it("penyedia scraping anya harus mengenali url tiktok dan instagram", async () => {
+    const { PenyediaScrapingAnya } = await import(
+      "../../src/services/downloader/anya-scraping-adapter.js"
     );
-    const penyedia = new PenyediaApinexa(konfigurasiTiruan);
+    const penyedia = new PenyediaScrapingAnya(konfigurasiTiruan);
 
     expect(penyedia.cocokUrl("https://www.tiktok.com/@user/video/123")).toBe(true);
     expect(penyedia.cocokUrl("https://www.instagram.com/reel/123/")).toBe(true);

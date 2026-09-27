@@ -91,7 +91,7 @@ app.use((req, res, next) => {
 app.get("/", (req, res) => {
   res.json({
     success: true,
-    message: "Tiktok & Instagram Downloader API - nexaTik",
+    message: "Tiktok & Instagram Downloader API - anyaScraping",
     routes: {
       tiktok_download: "/api/tiktok/download?url=<TIKTOK_URL>",
       tiktok_search: "/api/tiktok/search?query=<QUERY>",

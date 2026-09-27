@@ -25,7 +25,7 @@ import {
   LayananPengunduh,
   PenyediaApiEksternal,
 } from "./services/downloader/downloader-adapter.js";
-import { PenyediaApinexa } from "./services/downloader/apinexa-adapter.js";
+import { PenyediaScrapingAnya } from "./services/downloader/anya-scraping-adapter.js";
 
 // Perintah
 import { perintahPing } from "./commands/general/ping.js";
@@ -73,7 +73,7 @@ export class AplikasiAnya {
     this.perutePerintah = new PerutePerintah(this.registriPerintah, this.konfigurasi);
 
     this.layananPengunduh = new LayananPengunduh();
-    this.layananPengunduh.daftarkanPenyedia(new PenyediaApinexa(this.konfigurasi));
+    this.layananPengunduh.daftarkanPenyedia(new PenyediaScrapingAnya(this.konfigurasi));
     this.layananPengunduh.daftarkanPenyedia(new PenyediaApiEksternal(this.konfigurasi));
 
     this.daftarkanSemuaPerintah();

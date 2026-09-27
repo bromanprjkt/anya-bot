@@ -4,14 +4,14 @@ import { buatPencatat } from "../../utils/logger.js";
 import type { KonfigurasiEnv } from "../../config/env.js";
 import type { HasilUnduhan, PenyediaPengunduh } from "./downloader-adapter.js";
 
-const pencatat = buatPencatat("PenyediaApinexa");
+const pencatat = buatPencatat("PenyediaScrapingAnya");
 
 /**
- * Penyedia pengunduh yang mengintegrasikan scraper Apinexa (TikTok & Instagram).
- * Mendukung pemanggilan via REST API server Apinexa maupun fallback langsung ke berkas scraper.js.
+ * Penyedia pengunduh yang mengintegrasikan scraper lokal Anya (TikTok & Instagram).
+ * Mendukung pemanggilan via REST API server lokal maupun eksekusi modul scraper langsung.
  */
-export class PenyediaApinexa implements PenyediaPengunduh {
-  public readonly nama = "PenyediaApinexa";
+export class PenyediaScrapingAnya implements PenyediaPengunduh {
+  public readonly nama = "PenyediaScrapingAnya";
 
   constructor(private readonly konfigurasi: KonfigurasiEnv) {}
 
@@ -37,7 +37,7 @@ export class PenyediaApinexa implements PenyediaPengunduh {
 
     return {
       berhasil: false,
-      pesanKesalahan: "Format URL tidak didukung oleh Apinexa.",
+      pesanKesalahan: "Format URL tidak didukung oleh modul pengunduh Anya.",
     };
   }
 
@@ -52,7 +52,7 @@ export class PenyediaApinexa implements PenyediaPengunduh {
     if (urlApi) {
       try {
         const urlEndpoint = `${urlApi.replace(/\/$/, "")}/api/tiktok/download?url=${encodeURIComponent(tautan)}`;
-        pencatat.info({ urlEndpoint }, "Mengakses API Apinexa untuk unduhan TikTok");
+        pencatat.info({ urlEndpoint }, "Mengakses API server untuk unduhan TikTok");
 
         const tajuk: Record<string, string> = {};
         if (kunciApi) {
@@ -85,14 +85,14 @@ export class PenyediaApinexa implements PenyediaPengunduh {
       } catch (kesalahanApi) {
         pencatat.warn(
           { kesalahan: kesalahanApi instanceof Error ? kesalahanApi.message : kesalahanApi },
-          "Gagal memanggil API Apinexa, mencoba fallback scraper langsung"
+          "Gagal memanggil API server pengunduh, mencoba fallback modul scraper langsung"
         );
       }
     }
 
-    // Opsi 2: Fallback langsung ke modul scraper.js milik Apinexa
+    // Opsi 2: Fallback langsung ke modul scraper.js pada folder anya-scraping
     try {
-      const jalurModulScraper = path.resolve(process.cwd(), "apinexa", "scraper.js");
+      const jalurModulScraper = path.resolve(process.cwd(), "anya-scraping", "scraper.js");
       const { tiktokDownloaderVideo } = await import(jalurModulScraper);
 
       const hasilScraping = await tiktokDownloaderVideo(tautan);
@@ -119,7 +119,7 @@ export class PenyediaApinexa implements PenyediaPengunduh {
       };
     } catch (kesalahan) {
       const pesanError = kesalahan instanceof Error ? kesalahan.message : String(kesalahan);
-      pencatat.error({ kesalahan: pesanError }, "Kesalahan eksekusi scraper TikTok Apinexa");
+      pencatat.error({ kesalahan: pesanError }, "Kesalahan eksekusi scraper TikTok Anya");
       return {
         berhasil: false,
         pesanKesalahan: "Gagal memproses video TikTok. Pastikan akun atau video tidak diprivat.",
@@ -138,7 +138,7 @@ export class PenyediaApinexa implements PenyediaPengunduh {
     if (urlApi) {
       try {
         const urlEndpoint = `${urlApi.replace(/\/$/, "")}/api/instagram/download?url=${encodeURIComponent(tautan)}`;
-        pencatat.info({ urlEndpoint }, "Mengakses API Apinexa untuk unduhan Instagram");
+        pencatat.info({ urlEndpoint }, "Mengakses API server untuk unduhan Instagram");
 
         const tajuk: Record<string, string> = {};
         if (kunciApi) {
@@ -168,14 +168,14 @@ export class PenyediaApinexa implements PenyediaPengunduh {
       } catch (kesalahanApi) {
         pencatat.warn(
           { kesalahan: kesalahanApi instanceof Error ? kesalahanApi.message : kesalahanApi },
-          "Gagal memanggil API Instagram Apinexa, mencoba fallback scraper langsung"
+          "Gagal memanggil API server pengunduh, mencoba fallback modul scraper langsung"
         );
       }
     }
 
-    // Opsi 2: Fallback langsung ke modul scraper.js milik Apinexa
+    // Opsi 2: Fallback langsung ke modul scraper.js pada folder anya-scraping
     try {
-      const jalurModulScraper = path.resolve(process.cwd(), "apinexa", "scraper.js");
+      const jalurModulScraper = path.resolve(process.cwd(), "anya-scraping", "scraper.js");
       const { Instagram } = await import(jalurModulScraper);
 
       const hasilScraping = await Instagram(tautan);
@@ -201,7 +201,7 @@ export class PenyediaApinexa implements PenyediaPengunduh {
       };
     } catch (kesalahan) {
       const pesanError = kesalahan instanceof Error ? kesalahan.message : String(kesalahan);
-      pencatat.error({ kesalahan: pesanError }, "Kesalahan eksekusi scraper Instagram Apinexa");
+      pencatat.error({ kesalahan: pesanError }, "Kesalahan eksekusi scraper Instagram Anya");
       return {
         berhasil: false,
         pesanKesalahan: "Gagal memproses media Instagram. Pastikan akun tidak diprivat.",
