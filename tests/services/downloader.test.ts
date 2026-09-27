@@ -72,18 +72,25 @@ describe("Layanan Pengunduh & Perintah Media", () => {
     expect(balasMock.mock.calls[0][0]).toContain("Sertakan tautan Instagram yang valid");
   });
 
-  it("penyedia scraping anya harus mengenali url tiktok dan instagram", async () => {
-    const { PenyediaScrapingAnya } = await import(
-      "../../src/services/downloader/anya-scraping-adapter.js"
+  it("penyedia tiktok harus mengenali url tiktok dan menolak url lain", async () => {
+    const { PenyediaTikTok } = await import(
+      "../../src/services/downloader/downloader-adapter.js"
     );
-    const penyedia = new PenyediaScrapingAnya();
+    const penyedia = new PenyediaTikTok();
 
     expect(penyedia.cocokUrl("https://www.tiktok.com/@user/video/123")).toBe(true);
-    expect(penyedia.cocokUrl("https://www.instagram.com/reel/123/")).toBe(true);
-    expect(penyedia.cocokUrl("https://facebook.com/123")).toBe(false);
+    expect(penyedia.cocokUrl("https://vt.tiktok.com/123")).toBe(true);
+    expect(penyedia.cocokUrl("https://instagram.com/reel/123/")).toBe(false);
+  });
 
-    const hasilTolak = await penyedia.unduh("https://facebook.com/123");
-    expect(hasilTolak.berhasil).toBe(false);
+  it("penyedia instagram harus mengenali url instagram dan menolak url lain", async () => {
+    const { PenyediaInstagram } = await import(
+      "../../src/services/downloader/downloader-adapter.js"
+    );
+    const penyedia = new PenyediaInstagram();
+
+    expect(penyedia.cocokUrl("https://www.instagram.com/reel/123/")).toBe(true);
+    expect(penyedia.cocokUrl("https://tiktok.com/@user/video/123")).toBe(false);
   });
 });
 

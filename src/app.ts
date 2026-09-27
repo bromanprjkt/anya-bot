@@ -23,9 +23,10 @@ import { layananAntiTautan } from "./services/moderation/antilink-service.js";
 import { layananPenyimpananSementara } from "./services/storage/temp-storage.js";
 import {
   LayananPengunduh,
+  PenyediaTikTok,
+  PenyediaInstagram,
   PenyediaApiEksternal,
 } from "./services/downloader/downloader-adapter.js";
-import { PenyediaScrapingAnya } from "./services/downloader/anya-scraping-adapter.js";
 
 // Perintah
 import { perintahPing } from "./commands/general/ping.js";
@@ -73,7 +74,8 @@ export class AplikasiAnya {
     this.perutePerintah = new PerutePerintah(this.registriPerintah, this.konfigurasi);
 
     this.layananPengunduh = new LayananPengunduh();
-    this.layananPengunduh.daftarkanPenyedia(new PenyediaScrapingAnya());
+    this.layananPengunduh.daftarkanPenyedia(new PenyediaTikTok());
+    this.layananPengunduh.daftarkanPenyedia(new PenyediaInstagram());
     this.layananPengunduh.daftarkanPenyedia(new PenyediaApiEksternal(this.konfigurasi));
 
     this.daftarkanSemuaPerintah();

@@ -1,5 +1,7 @@
 import { buatPencatat } from "../../utils/logger.js";
 import type { KonfigurasiEnv } from "../../config/env.js";
+import { unduhVideoTikTok } from "./tiktok-scraper.js";
+import { unduhMediaInstagram } from "./instagram-scraper.js";
 
 const pencatat = buatPencatat("LayananPengunduh");
 
@@ -16,6 +18,37 @@ export interface PenyediaPengunduh {
   readonly nama: string;
   cocokUrl: (tautan: string) => boolean;
   unduh: (tautan: string) => Promise<HasilUnduhan>;
+}
+
+/**
+ * Penyedia pengunduh bawaan untuk TikTok dengan dual-engine (TikWM & SSSTik).
+ */
+export class PenyediaTikTok implements PenyediaPengunduh {
+  public readonly nama = "PenyediaTikTok";
+
+  public cocokUrl(tautan: string): boolean {
+    const tautanKecil = tautan.toLowerCase();
+    return tautanKecil.includes("tiktok.com") || tautanKecil.includes("douyin.com");
+  }
+
+  public async unduh(tautan: string): Promise<HasilUnduhan> {
+    return await unduhVideoTikTok(tautan);
+  }
+}
+
+/**
+ * Penyedia pengunduh bawaan untuk Instagram dengan dual-engine (GraphQL & SnapSave).
+ */
+export class PenyediaInstagram implements PenyediaPengunduh {
+  public readonly nama = "PenyediaInstagram";
+
+  public cocokUrl(tautan: string): boolean {
+    return tautan.toLowerCase().includes("instagram.com");
+  }
+
+  public async unduh(tautan: string): Promise<HasilUnduhan> {
+    return await unduhMediaInstagram(tautan);
+  }
 }
 
 /**
