@@ -1,7 +1,47 @@
+import fs from "node:fs";
+import path from "node:path";
 import type { PerintahBot, RegistriPerintah, KategoriPerintah } from "../../core/command-registry.js";
 import type { KonteksPerintah } from "../../core/message-context.js";
 import { periksaIzinPerintah } from "../../core/permissions.js";
 import { konfigurasiEnv } from "../../config/env.js";
+
+const URL_BANNER =
+  "https://raw.githubusercontent.com/bromanprjkt/anya-bot/refs/heads/main/banner.png";
+const JALUR_BANNER_LOKAL = path.resolve(process.cwd(), "banner.png");
+let memoriBufferBanner: Buffer | null = null;
+
+/**
+ * Mengambil buffer banner bot baik dari berkas lokal atau unduhan online.
+ */
+async function ambilBufferBanner(): Promise<Buffer | null> {
+  if (memoriBufferBanner) {
+    return memoriBufferBanner;
+  }
+
+  // Prioritaskan berkas lokal jika tersedia
+  if (fs.existsSync(JALUR_BANNER_LOKAL)) {
+    try {
+      memoriBufferBanner = fs.readFileSync(JALUR_BANNER_LOKAL);
+      return memoriBufferBanner;
+    } catch {
+      // Abaikan jika berkas lokal tidak dapat dibaca
+    }
+  }
+
+  // Unduh dari URL online jika berkas lokal belum ada
+  try {
+    const respon = await fetch(URL_BANNER);
+    if (respon.ok) {
+      const buffer = Buffer.from(await respon.arrayBuffer());
+      memoriBufferBanner = buffer;
+      return buffer;
+    }
+  } catch {
+    // Abaikan jika unduhan gagal
+  }
+
+  return null;
+}
 
 /**
  * Membuat perintah menu kontekstual yang ringkas dan hanya menampilkan
@@ -48,6 +88,24 @@ export function buatPerintahMenu(registri: RegistriPerintah): PerintahBot {
       }
 
       teksMenu += `Ketik \`${awalan}help <nama_perintah>\` untuk petunjuk detail.`;
+
+      const bufferBanner = await ambilBufferBanner();
+
+      if (bufferBanner && typeof konteks.soket?.sendMessage === "function") {
+        try {
+          await konteks.soket.sendMessage(
+            konteks.idObrolan,
+            {
+              image: bufferBanner,
+              caption: teksMenu.trim(),
+            },
+            { quoted: konteks.pesanMentah }
+          );
+          return;
+        } catch {
+          // Fallback ke pesan teks jika gagal mengirim gambar
+        }
+      }
 
       await konteks.balas(teksMenu.trim());
     },

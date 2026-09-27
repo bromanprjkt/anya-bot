@@ -137,4 +137,27 @@ describe("Perintah Umum (General Commands)", () => {
     expect(pesanBalasan).toContain("!ping");
     expect(pesanBalasan).toContain("Mengecek kecepatan respon bot");
   });
+
+  it("perintah menu harus mengirimkan banner gambar jika soket mendukung sendMessage", async () => {
+    const registri = new RegistriPerintah();
+    registri.daftarkan(perintahPing);
+
+    const kirimPesanMock = vi.fn();
+    const perintahMenu = buatPerintahMenu(registri);
+    const konteks = buatKonteksTiruan({
+      namaPerintah: "menu",
+      soket: {
+        sendMessage: kirimPesanMock,
+      } as any,
+    });
+
+    await perintahMenu.jalankan(konteks);
+
+    expect(kirimPesanMock).toHaveBeenCalledTimes(1);
+    const opsiPesan = kirimPesanMock.mock.calls[0][1];
+    expect(opsiPesan).toHaveProperty("image");
+    expect(opsiPesan.caption).toContain("*Anya Bot*");
+    expect(opsiPesan.caption).toContain("!ping");
+  });
 });
+
