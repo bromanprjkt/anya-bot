@@ -20,6 +20,7 @@ describe("Layanan Pengunduh & Perintah Media", () => {
     batasPekerjaanMediaBersamaan: 2,
     urlApiPengunduh: "",
     kunciApiPengunduh: "",
+    bacaPesanOtomatis: true,
   };
 
   it("penyedia eksternal harus mengenali URL tiktok dan instagram", () => {

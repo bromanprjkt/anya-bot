@@ -8,4 +8,5 @@ export const KONFIGURASI_BAWAAN = {
   JALUR_DATABASE: "./data/anya.db",
   NAMA_SESI: "anya-session",
   BATAS_PEKERJAAN_MEDIA_BERSAMAAN: 2,
+  BACA_PESAN_OTOMATIS: true,
 } as const;

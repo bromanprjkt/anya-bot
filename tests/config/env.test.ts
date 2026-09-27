@@ -11,6 +11,7 @@ describe("Penguraian Konfigurasi Lingkungan (Env)", () => {
     expect(hasil.jalurDatabase).toBe("./data/anya.db");
     expect(hasil.direktoriSementara).toBe("./temp");
     expect(hasil.batasPekerjaanMediaBersamaan).toBe(2);
+    expect(hasil.bacaPesanOtomatis).toBe(true);
   });
 
   it("harus berhasil mengurai nilai variabel lingkungan yang valid", () => {
@@ -25,6 +26,7 @@ describe("Penguraian Konfigurasi Lingkungan (Env)", () => {
       MAX_CONCURRENT_MEDIA_JOBS: "4",
       DOWNLOADER_API_URL: "https://api.example.com",
       DOWNLOADER_API_KEY: "rahasia123",
+      AUTO_READ: "false",
     };
 
     const hasil = uraiKonfigurasiEnv(lingkunganUji);
@@ -39,6 +41,7 @@ describe("Penguraian Konfigurasi Lingkungan (Env)", () => {
     expect(hasil.batasPekerjaanMediaBersamaan).toBe(4);
     expect(hasil.urlApiPengunduh).toBe("https://api.example.com");
     expect(hasil.kunciApiPengunduh).toBe("rahasia123");
+    expect(hasil.bacaPesanOtomatis).toBe(false);
   });
 
   it("harus melempar kesalahan jika NODE_ENV tidak valid", () => {

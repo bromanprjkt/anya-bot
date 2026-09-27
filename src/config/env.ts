@@ -28,6 +28,12 @@ const skemaEnv = z.object({
     .default(KONFIGURASI_BAWAAN.BATAS_PEKERJAAN_MEDIA_BERSAMAAN),
   DOWNLOADER_API_URL: z.string().optional().default(""),
   DOWNLOADER_API_KEY: z.string().optional().default(""),
+  AUTO_READ: z
+    .preprocess(
+      (nilai) => (typeof nilai === "string" ? nilai.toLowerCase() === "true" || nilai === "1" : nilai),
+      z.boolean()
+    )
+    .default(KONFIGURASI_BAWAAN.BACA_PESAN_OTOMATIS),
 });
 
 export interface KonfigurasiEnv {
@@ -41,6 +47,7 @@ export interface KonfigurasiEnv {
   batasPekerjaanMediaBersamaan: number;
   urlApiPengunduh: string;
   kunciApiPengunduh: string;
+  bacaPesanOtomatis: boolean;
 }
 
 /**
@@ -76,6 +83,7 @@ export function uraiKonfigurasiEnv(
     batasPekerjaanMediaBersamaan: data.MAX_CONCURRENT_MEDIA_JOBS,
     urlApiPengunduh: data.DOWNLOADER_API_URL,
     kunciApiPengunduh: data.DOWNLOADER_API_KEY,
+    bacaPesanOtomatis: data.AUTO_READ,
   };
 }
 

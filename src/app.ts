@@ -53,6 +53,7 @@ import { perintahWarnings } from "./commands/moderation/warnings.js";
 
 import { perintahBotStats } from "./commands/admin/botstats.js";
 import { perintahMaintenance, apakahModePemeliharaan } from "./commands/admin/maintenance.js";
+import { perintahAutoRead, apakahBacaOtomatisAktif } from "./commands/admin/autoread.js";
 
 export class AplikasiAnya {
   private readonly pencatat: pino.Logger;
@@ -114,6 +115,7 @@ export class AplikasiAnya {
     // Kategori: Admin
     this.registriPerintah.daftarkan(perintahBotStats);
     this.registriPerintah.daftarkan(perintahMaintenance);
+    this.registriPerintah.daftarkan(perintahAutoRead);
 
     this.pencatat.info(
       { totalPerintah: this.registriPerintah.ambilSemua().length },
@@ -145,6 +147,15 @@ export class AplikasiAnya {
       ? (pesan.key.participant ?? pesan.participant ?? "")
       : idObrolan;
     const namaPengirim = pesan.pushName ?? "Pengguna";
+
+    // Auto Read: Tandai pesan sebagai telah dibaca (centang biru) otomatis
+    if (apakahBacaOtomatisAktif() && pesan.key && !pesan.key.fromMe) {
+      try {
+        await soket.readMessages([pesan.key]);
+      } catch (kesalahan) {
+        this.pencatat.debug({ kesalahan }, "Gagal menandai pesan otomatis sebagai dibaca");
+      }
+    }
 
     // Catat statistik pesan pengguna
     repositoriPengguna.tambahPesanPengguna(idPengirim, namaPengirim);

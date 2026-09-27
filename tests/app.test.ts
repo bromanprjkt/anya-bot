@@ -20,6 +20,7 @@ describe("AplikasiAnya Bootstrap", () => {
     batasPekerjaanMediaBersamaan: 2,
     urlApiPengunduh: "",
     kunciApiPengunduh: "",
+    bacaPesanOtomatis: true,
   };
 
   beforeEach(() => {
@@ -58,6 +59,35 @@ describe("AplikasiAnya Bootstrap", () => {
 
     await expect(aplikasi.mulai()).resolves.toBeUndefined();
     expect(aplikasi.apakahSedangBerjalan()).toBe(true);
+
+    await aplikasi.berhenti();
+  });
+
+  it("harus menandai pesan sebagai telah dibaca secara otomatis jika auto-read aktif", async () => {
+    const aplikasi = new AplikasiAnya(konfigurasiUji);
+    await aplikasi.mulai();
+
+    const bacaPesanMock = vi.fn();
+    const soketMock = {
+      readMessages: bacaPesanMock,
+      sendMessage: vi.fn(),
+    } as any;
+
+    const pesanMasukMock = {
+      key: {
+        remoteJid: "12345@s.whatsapp.net",
+        fromMe: false,
+        id: "MSG123",
+      },
+      message: {
+        conversation: "Halo bot",
+      },
+    } as any;
+
+    await aplikasi.tanganiPesanMasuk(soketMock, pesanMasukMock);
+
+    expect(bacaPesanMock).toHaveBeenCalledTimes(1);
+    expect(bacaPesanMock).toHaveBeenCalledWith([pesanMasukMock.key]);
 
     await aplikasi.berhenti();
   });

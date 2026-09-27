@@ -17,6 +17,7 @@ describe("PerutePerintah", () => {
     batasPekerjaanMediaBersamaan: 2,
     urlApiPengunduh: "",
     kunciApiPengunduh: "",
+    bacaPesanOtomatis: true,
   };
 
   it("harus dapat mengekstrak teks dari berbagai format pesan", () => {
