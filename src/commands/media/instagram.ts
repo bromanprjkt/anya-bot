@@ -32,13 +32,16 @@ export function buatPerintahInstagram(layanan: LayananPengunduh): PerintahBot {
       try {
         const buffer = await layanan.ambilBufferMedia(hasil.urlMedia);
         const adalahVideo = (hasil.tipeMime ?? "").includes("video");
+        const keterangan = hasil.judul
+          ? `*Instagram*: ${hasil.judul}`
+          : `Berhasil mengunduh ${adalahVideo ? "video" : "foto"} Instagram.`;
 
         if (adalahVideo) {
           await konteks.soket.sendMessage(
             konteks.idObrolan,
             {
               video: buffer,
-              caption: "Berhasil mengunduh video Instagram.",
+              caption: keterangan,
               mimetype: hasil.tipeMime ?? "video/mp4",
             },
             { quoted: konteks.pesanMentah }
@@ -48,7 +51,7 @@ export function buatPerintahInstagram(layanan: LayananPengunduh): PerintahBot {
             konteks.idObrolan,
             {
               image: buffer,
-              caption: "Berhasil mengunduh foto Instagram.",
+              caption: keterangan,
               mimetype: hasil.tipeMime ?? "image/jpeg",
             },
             { quoted: konteks.pesanMentah }

@@ -9,6 +9,7 @@ export interface HasilUnduhan {
   namaFile?: string;
   tipeMime?: string;
   pesanKesalahan?: string;
+  judul?: string;
 }
 
 export interface PenyediaPengunduh {
@@ -137,10 +138,26 @@ export class LayananPengunduh {
   }
 
   /**
-   * Mengambil file biner dari URL media yang diberikan.
+   * Mengambil file biner dari URL media yang diberikan dengan tajuk proteksi sesuai sumber.
    */
   public async ambilBufferMedia(urlMedia: string): Promise<Buffer> {
-    const respon = await fetch(urlMedia);
+    const tajuk: Record<string, string> = {
+      "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36",
+    };
+
+    if (urlMedia.includes("tikwm.com")) {
+      tajuk["Referer"] = "https://www.tikwm.com/";
+    } else if (
+      urlMedia.includes("instagram.com") ||
+      urlMedia.includes("cdninstagram.com")
+    ) {
+      tajuk["Referer"] = "https://www.instagram.com/";
+    } else if (urlMedia.includes("snapsave.app")) {
+      tajuk["Referer"] = "https://snapsave.app/";
+    }
+
+    const respon = await fetch(urlMedia, { headers: tajuk });
     if (!respon.ok) {
       throw new Error(`Gagal mengunduh biner media: ${respon.status} ${respon.statusText}`);
     }

@@ -31,18 +31,34 @@ export function buatPerintahTikTok(layanan: LayananPengunduh): PerintahBot {
 
       try {
         const buffer = await layanan.ambilBufferMedia(hasil.urlMedia);
+        const adalahFoto = (hasil.tipeMime ?? "").includes("image");
+        const keterangan = hasil.judul
+          ? `*TikTok*: ${hasil.judul}`
+          : "Berhasil mengunduh media TikTok.";
 
-        await konteks.soket.sendMessage(
-          konteks.idObrolan,
-          {
-            video: buffer,
-            caption: "Berhasil mengunduh video TikTok tanpa watermark.",
-            mimetype: hasil.tipeMime ?? "video/mp4",
-          },
-          { quoted: konteks.pesanMentah }
-        );
+        if (adalahFoto) {
+          await konteks.soket.sendMessage(
+            konteks.idObrolan,
+            {
+              image: buffer,
+              caption: keterangan,
+              mimetype: hasil.tipeMime ?? "image/jpeg",
+            },
+            { quoted: konteks.pesanMentah }
+          );
+        } else {
+          await konteks.soket.sendMessage(
+            konteks.idObrolan,
+            {
+              video: buffer,
+              caption: keterangan,
+              mimetype: hasil.tipeMime ?? "video/mp4",
+            },
+            { quoted: konteks.pesanMentah }
+          );
+        }
       } catch (kesalahan) {
-        await konteks.balas("Gagal mentransfer berkas video media ke WhatsApp.");
+        await konteks.balas("Gagal mentransfer berkas media ke WhatsApp.");
       }
     },
   };
