@@ -62,7 +62,6 @@ export class LayananAntiTautan {
           return true;
         }
       } catch {
-        // Jika format URL tidak valid namun cocok pola regex, anggap mencurigakan
         return true;
       }
     }

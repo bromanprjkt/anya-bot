@@ -1,30 +1,41 @@
 # Dependency
 node_modules/
+.pnp/
+.pnp.js
 
 # Build Output
 dist/
+*.tsbuildinfo
 
-# Environment Variables
+# Environment Variables & Secrets
 .env
 .env.local
 .env.*.local
+.env.test
 
-# WhatsApp Session
+# WhatsApp Sessions & Auth
 session/
 *-session/
 *session*/
 baileys_auth_info/
+auth_info_baileys/
+data/*-session/
+data/session*/
 
-# SQLite Database
+# SQLite Database & Journals
 data/*.db
 data/*.db-journal
 data/*.db-wal
 data/*.db-shm
+data/*.sqlite
+data/*.sqlite3
 !data/.gitkeep
 
-# Temporary Files
+# Temporary Files & Buffers
 temp/*
 !temp/.gitkeep
+*.tmp
+*.temp
 
 # Logs
 *.log
@@ -33,18 +44,32 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# Coverage and Test Output
+# Test Coverage & Reports
 coverage/
 .nyc_output/
+*.lcov
 
-# OS / Editor
+# Temporary Screenshots & Media Dumps
 image*.png
+test-*.png
+test-*.webp
+test-*.mp4
+!banner.png
+
+# OS & Editor
 .DS_Store
+.DS_Store?
+._*
 Thumbs.db
+ehthumbs.db
 .idea/
-.vscode/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+*~
+*.sublime-*

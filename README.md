@@ -1,28 +1,52 @@
 # Anya Bot
 
-> Public WhatsApp Group Media & Moderation Bot
+> Public WhatsApp Group Media & Moderation Bot (Versi 0.1 beta)
 
-Anya Bot adalah bot WhatsApp grup publik yang berfokus pada stiker, pemrosesan media, peralatan grup, moderasi, serta pengunduh media eksternal yang modular dan tangguh.
+Anya Bot adalah bot WhatsApp grup publik yang dirancang dengan arsitektur Modular Monolith menggunakan TypeScript murni. Bot ini berfokus pada kecepatan pembuatan stiker, manipulasi media, peralatan administrasi grup, sistem moderasi otomatis, serta pengunduh media eksternal (TikTok & Instagram) dengan mekanisme dual-engine scraper.
 
 ---
 
 ## 1. Fitur Utama
 
-- **Stiker & Media**: Pembuatan stiker gambar, stiker animasi (video/GIF) via FFmpeg & Sharp, ekstraksi stiker ke gambar (`!toimg`).
-- **Peralatan Grup**: Mention semua member (`!tagall`), info grup (`!groupinfo`), daftar admin (`!admins`), pesan sambutan (`!welcome`) dan perpisahan (`!goodbye`).
-- **Moderasi**: Anti-link dengan pengecualian domain, anti-spam berbasis rate limiting, sistem peringatan (`!warn`, `!warnings`).
-- **Job Queue & Concurrency**: Pemrosesan media aman dari beban berlebih menggunakan antrean kerja.
-- **Pengunduh Modular**: Adapter fleksibel menuju API scraper eksternal (TikTok, Instagram).
+- **Pemrosesan Media & Stiker**:
+  - Konversi gambar dan video pendek (durasi < 10 detik) ke stiker WebP statis maupun animasi.
+  - Konversi stiker WebP kembali menjadi gambar PNG (`!toimg`).
+  - Ekstraksi stiker kutipan ke foto atau pembaruan metadata EXIF stiker (`!take` / `!colong`).
+  - Generator Quote Chat (`!qc`) dengan gelembung obrolan WhatsApp berlatar gelap.
+  - Generator teks ke stiker (`!ttp`) dengan latar belakang putih, teks tebal, dan auto-wrapping baris.
+  - Metadata stiker terintegrasi dengan tanda penerbit bawaan (`github@bromanprjkt`).
+
+- **Pengunduh Media Dual-Engine**:
+  - Pengunduh video dan slide foto TikTok tanpa watermark (mesin utama TikWM, mesin cadangan SSSTik).
+  - Pengunduh Reel dan Post Instagram (mesin utama GraphQL API, mesin cadangan SnapSave scraper).
+  - Adapter modular untuk integrasi HTTP API scraper eksternal kustom.
+
+- **Peralatan Manajemen Grup**:
+  - Panggilan massal seluruh peserta grup (`!tagall`).
+  - Informasi detail metadata grup (`!groupinfo`).
+  - Daftar pengelola dan administrator grup (`!admins`).
+  - Notifikasi otomatis selamat datang (`!welcome`) dan perpisahan anggota (`!goodbye`).
+
+- **Moderasi & Keamanan Otomatis**:
+  - Deteksi dan pencegahan tautan berbahaya serta undangan grup lain (`!antilink`) dengan daftar putih domain terpercaya.
+  - Pembatasan frekuensi pengiriman perintah berbasis sliding window (`!antispam`).
+  - Sistem akumulasi pelanggaran anggota (`!warn` dan `!warnings`) dengan batas maksimal 3 kali sebelum dikeluarkan otomatis dari grup.
+
+- **Administrasi Bot & Sistem**:
+  - Auto-read pesan WhatsApp masuk secara otomatis (centang biru).
+  - Mode pemeliharaan sistem (`!maintenance`) untuk membatasi eksekusi saat perbaikan.
+  - Pemantauan metrik server, memori heap/RSS, waktu aktif, dan antrean pekerjaan (`!botstats`).
+  - Antrean pekerjaan media berbasis konkurensi terkontrol untuk mencegah lonjakan CPU dan RAM.
 
 ---
 
 ## 2. Persyaratan Sistem
 
-- Node.js LTS (v20+)
-- pnpm (v9+)
-- FFmpeg (untuk konversi video/audio/stiker animasi)
+- Node.js LTS (v20 atau lebih baru)
+- pnpm (v9 atau lebih baru)
+- FFmpeg (tersedia di PATH sistem atau melalui kontainer Docker)
 - SQLite3
-- Docker & Docker Compose (opsional untuk deployment kontainer)
+- Docker & Docker Compose (opsional, untuk deployment berbasis kontainer)
 
 ---
 
@@ -30,42 +54,83 @@ Anya Bot adalah bot WhatsApp grup publik yang berfokus pada stiker, pemrosesan m
 
 1. Klon repositori:
    ```bash
-   git clone <repo-url>
+   git clone https://github.com/bromanprjkt/anya-bot.git
    cd anya-bot
    ```
 
-2. Pasang dependensi:
+2. Pasang seluruh dependensi:
    ```bash
    pnpm install
    ```
 
-3. Siapkan berkas konfigurasi lingkungan:
+3. Salin konfigurasi lingkungan:
    ```bash
    cp .env.example .env
    ```
 
----
-
-## 4. Konfigurasi Variabel Lingkungan
-
-| Variabel | Deskripsi | Bawaan |
-|---|---|---|
-| `NODE_ENV` | Lingkungan aplikasi (`development`, `production`, `test`) | `development` |
-| `LOG_LEVEL` | Tingkat log Pino (`fatal`, `error`, `warn`, `info`, `debug`, `trace`, `silent`) | `info` |
-| `BOT_PREFIX` | Awalan perintah bot WhatsApp | `!` |
-| `BOT_OWNER_ID` | JID WhatsApp pemilik bot (misal: `628xxx@s.whatsapp.net`) | - |
-| `DATABASE_PATH` | Jalur penyimpanan basis data SQLite | `./data/anya.db` |
-| `TEMP_DIRECTORY` | Direktori berkas sementara | `./temp` |
-| `SESSION_NAME` | Nama folder/kunci sesi autentikasi Baileys | `anya-session` |
-| `MAX_CONCURRENT_MEDIA_JOBS` | Batas maksimum pemrosesan media secara simultan | `2` |
-| `DOWNLOADER_API_URL` | URL API scraper pengunduh media eksternal | - |
-| `DOWNLOADER_API_KEY` | Kunci otentikasi API scraper eksternal | - |
+4. Sesuaikan nilai pada berkas `.env` sesuai kebutuhan server.
 
 ---
 
-## 5. Pengembangan (Development)
+## 4. Konfigurasi Lingkungan (.env)
 
-- Menjalankan bot dalam mode pengawasan langsung (hot-reload):
+| Variabel | Tipe | Bawaan | Keterangan |
+|---|---|---|---|
+| `NODE_ENV` | String | `development` | Lingkungan aplikasi (`development`, `production`, `test`) |
+| `LOG_LEVEL` | String | `info` | Tingkat log Pino (`fatal`, `error`, `warn`, `info`, `debug`, `trace`, `silent`) |
+| `BOT_PREFIX` | String | `!` | Simbol awalan untuk memicu perintah bot |
+| `BOT_OWNER_ID` | String | (Kosong) | JID WhatsApp pemilik bot (contoh: `6281234567890@s.whatsapp.net`) |
+| `BOT_VERSION` | String | `0.1 beta` | Versi aktif bot |
+| `DATABASE_PATH` | String | `./data/anya.db` | Jalur penyimpanan basis data SQLite lokal |
+| `TEMP_DIRECTORY` | String | `./temp` | Direktori penampungan berkas olahan sementara |
+| `SESSION_NAME` | String | `anya-session` | Nama folder penyimpanan kredensial sesi Baileys |
+| `MAX_CONCURRENT_MEDIA_JOBS` | Number | `2` | Batas pemrosesan media video/stiker secara bersamaan |
+| `AUTO_READ` | Boolean | `true` | Menandai pesan masuk sebagai telah dibaca secara otomatis |
+| `DOWNLOADER_API_URL` | String | (Kosong) | URL endpoint API scraper pihak ketiga opsional |
+| `DOWNLOADER_API_KEY` | String | (Kosong) | Token otentikasi Bearer API scraper eksternal |
+
+---
+
+## 5. Daftar Perintah
+
+### Umum
+- `!menu`: Menampilkan daftar perintah yang berhak diakses oleh pengguna beserta banner bot.
+- `!ping`: Memeriksa latensi respon soket dan waktu aktif bot.
+- `!owner`: Menampilkan kontak nomor pemilik bot.
+- `!help [perintah]`: Panduan penggunaan bot atau informasi detail perintah tertentu.
+
+### Media & Stiker
+- `!sticker` / `!s`: Mengonversi gambar atau video (maksimal 10 detik) menjadi stiker WebP.
+- `!toimg`: Mengonversi stiker yang dibalas menjadi gambar biner PNG.
+- `!take` / `!colong`: Mengubah stiker yang dibalas menjadi foto atau memperbarui metadata paket stiker.
+- `!qc <teks>`: Membuat stiker kutipan percakapan WhatsApp dengan nama pengguna.
+- `!ttp <teks>`: Mengubah teks menjadi stiker berlatar putih dengan pembungkusan baris otomatis.
+- `!tiktok` / `!tt <url>`: Mengunduh video atau slide foto TikTok tanpa watermark.
+- `!instagram` / `!ig <url>`: Mengunduh video Reel atau Post foto Instagram.
+
+### Pengelolaan Grup
+- `!tagall [pesan]`: Menyebut (mention) seluruh anggota grup dalam satu pesan (hanya admin grup).
+- `!groupinfo`: Menampilkan ringkasan informasi grup WhatsApp saat ini.
+- `!admins`: Menampilkan daftar seluruh administrator grup.
+- `!welcome [on|off]`: Mengaktifkan atau menonaktifkan pesan sambutan anggota baru.
+- `!goodbye [on|off]`: Mengaktifkan atau menonaktifkan pesan perpisahan anggota keluar.
+
+### Moderasi Grup
+- `!antilink [on|off]`: Menghapus pesan anggota non-admin yang memuat tautan terlarang atau tautan grup lain.
+- `!antispam [on|off]`: Membatasi spam pesan perintah menggunakan pembatas frekuensi otomatis.
+- `!warn @user [alasan]`: Memberikan surat peringatan ke anggota (maksimal 3 kali sebelum kick).
+- `!warnings [@user]`: Melihat rekam jejak pelanggaran anggota grup.
+
+### Khusus Pemilik Bot
+- `!autoread [on|off]`: Mengaktifkan atau mematikan fitur centang biru otomatis.
+- `!maintenance [on|off]`: Menghidupkan mode pemeliharaan bot.
+- `!botstats`: Menampilkan statistik sistem, memori, antrean job, dan versi bot.
+
+---
+
+## 6. Perintah Pengembangan
+
+- Menjalankan bot dalam mode pengawasan langsung (live reload):
   ```bash
   pnpm dev
   ```
@@ -73,87 +138,62 @@ Anya Bot adalah bot WhatsApp grup publik yang berfokus pada stiker, pemrosesan m
   ```bash
   pnpm typecheck
   ```
-- Menjalankan suite pengujian:
+- Menjalankan suite pengujian unit:
   ```bash
   pnpm test
   ```
-- Membangun kode untuk produksi:
+- Melakukan kompilasi TypeScript ke folder `dist/`:
   ```bash
   pnpm build
   ```
-- Menjalankan kode produksi:
+- Menjalankan bot hasil kompilasi:
   ```bash
   pnpm start
   ```
 
 ---
 
-## 6. Autentikasi WhatsApp
-
-Bot menggunakan Baileys untuk koneksi ke WhatsApp Web socket. Pada peluncuran awal:
-- QR code atau kode pairing akan dicetak pada terminal/log.
-- Sesi disimpan secara aman di direktori lokal atau persistent volume container.
-
----
-
 ## 7. Menjalankan dengan Docker
+
+Proyek ini telah dilengkapi dengan konfigurasi multi-stage build dan Docker Compose untuk kemudahan deployment:
 
 ```bash
 docker compose up -d
 ```
-Berkas data SQLite dan sesi autentikasi akan tersimpan persisten di `./data`.
+
+Penyimpanan sesi autentikasi dan basis data SQLite akan disimpan secara persisten di folder volume `./data`.
 
 ---
 
-## 8. Struktur Proyek
+## 8. Struktur Direktori
 
 ```text
 anya-bot/
-├── src/
-│   ├── app.ts                  # Kelas daur hidup aplikasi utama
-│   ├── index.ts                # Titik masuk proses (bootstrap)
-│   ├── config/                 # Konfigurasi lingkungan & nilai bawaan
-│   ├── whatsapp/               # Koneksi Baileys & penanganan event
-│   ├── core/                   # Router perintah, registry, rate limiter, & perizinan
-│   ├── commands/               # Definisi perintah (general, media, group, moderasi)
-│   ├── services/               # Layanan bisnis (media, antrean, downloader)
-│   ├── repositories/           # Pengelolaan data SQLite
-│   ├── utils/                  # Utilitas logger, pembersih file, dsb.
-│   └── types/                  # Definisi tipe data & antarmuka
-├── tests/                      # Suite pengujian Vitest
-├── data/                       # Penyimpanan database persisten
-├── temp/                       # Direktori kerja file sementara
-├── Dockerfile
-├── compose.yaml
-├── .env.example
-├── tsconfig.json
-└── package.json
+├── banner.png                  # Banner resmi untuk menu bot
+├── compose.yaml                # Konfigurasi Docker Compose
+├── Dockerfile                  # Definisi kontainer multi-stage build
+├── package.json                # Metadata proyek dan dependensi pnpm
+├── tsconfig.json               # Konfigurasi TypeScript strict mode
+├── vitest.config.ts            # Konfigurasi unit testing Vitest
+├── .env.example                # Templat variabel lingkungan
+├── .gitignore                  # Aturan pengabaian berkas git
+├── data/                       # Direktori persisten basis data SQLite & sesi
+├── temp/                       # Direktori kerja pemrosesan media sementara
+├── tests/                      # Suite pengujian unit otomatis
+└── src/
+    ├── app.ts                  # Inisialisasi dan orkestrator bot utama
+    ├── index.ts                # Titik masuk proses bootstrap Node.js
+    ├── config/                 # Konfigurasi Zod dan konstanta bawaan
+    ├── core/                   # Router perintah, registri, perizinan, rate limiter
+    ├── commands/               # Definisi perintah (general, media, group, moderasi, admin)
+    ├── repositories/           # Pengelolaan data SQLite (user, group, warning)
+    ├── services/               # Layanan bisnis (media, antrean job, downloader)
+    ├── utils/                  # Utilitas logger Pino
+    └── whatsapp/               # Koneksi soket Baileys dan penanganan event
 ```
 
 ---
 
-## 9. Menambahkan Perintah Baru
+## 9. Lisensi
 
-1. Buat berkas perintah pada kategori terkait di dalam `src/commands/`.
-2. Implementasikan antarmuka `PerintahBot`.
-3. Daftarkan perintah ke `RegistriPerintah`.
-
----
-
-## 10. Menambahkan Penyedia Pengunduh
-
-Implementasikan kontrak antarmuka `PenyediaPengunduh` pada `src/services/downloader/` untuk mengintegrasikan scraper API pihak ketiga tanpa mengubah logika perintah.
-
----
-
-## 11. Pemecahan Masalah (Troubleshooting)
-
-- **Masalah Sesi / Disconnect**: Hapus folder sesi terkait dan jalankan ulang untuk memindai ulang QR code.
-- **FFmpeg Error**: Pastikan binary FFmpeg terpasang di sistem (`which ffmpeg`) atau jalankan via Docker.
-- **Izin Berkas**: Pastikan proses memiliki izin tulis pada folder `./data` dan `./temp`.
-
----
-
-## 12. Lisensi
-
-ISC License.
+Proyek ini didistribusikan di bawah lisensi ISC.

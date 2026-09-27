@@ -26,8 +26,6 @@ function buatBufferExif(namaPaket: string = "Anya Bot", pembuat: string = "githu
 
   const stringJson = JSON.stringify(jsonMetadata);
   const panjangJson = Buffer.byteLength(stringJson, "utf8");
-
-  // Format header EXIF TIFF standar untuk stiker WebP WhatsApp
   const tajukTiff = Buffer.from([
     0x49, 0x49, 0x2a, 0x00, 0x08, 0x00, 0x00, 0x00, 0x01, 0x00, 0x41, 0x57,
     0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x16, 0x00, 0x00, 0x00,
@@ -58,8 +56,6 @@ function sisipkanExifKeWebp(
   }
 
   const chunkFourCC = bufferWebp.toString("ascii", 12, 16);
-
-  // Buat chunk EXIF: 'EXIF' + 4-byte size + data (+ padding byte jika ganjil)
   const panjangExif = bufferExif.length;
   const chunkExif = Buffer.alloc(8 + panjangExif + (panjangExif % 2));
   chunkExif.write("EXIF", 0, 4, "ascii");
@@ -67,7 +63,6 @@ function sisipkanExifKeWebp(
   bufferExif.copy(chunkExif, 8);
 
   if (chunkFourCC === "VP8X") {
-    // Jika sudah memiliki header VP8X, aktifkan flag bit EXIF (bit 3: 0x08)
     const salinan = Buffer.from(bufferWebp);
     salinan[20] = (salinan[20] ?? 0) | 0x08;
     const hasilAkhir = Buffer.concat([salinan, chunkExif]);
@@ -75,11 +70,10 @@ function sisipkanExifKeWebp(
     return hasilAkhir;
   }
 
-  // Jika WebP sederhana (VP8 / VP8L), bangun header VP8X
   const chunkVp8x = Buffer.alloc(18);
   chunkVp8x.write("VP8X", 0, 4, "ascii");
   chunkVp8x.writeUInt32LE(10, 4);
-  chunkVp8x[8] = 0x08; // Flag bit EXIF
+  chunkVp8x[8] = 0x08; 
 
   const l = lebar - 1;
   chunkVp8x[12] = l & 0xff;

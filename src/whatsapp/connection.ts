@@ -37,7 +37,6 @@ export function tanganiPembaruanKoneksi(
     }
 
     const pesan = kesalahan instanceof Error ? kesalahan.message : String(kesalahan);
-    // Logout sejati hanya terjadi jika status loggedOut dan pesan spesifik mengindikasikan logout perangkat
     const adalahLogout =
       kodeStatus === DisconnectReason.loggedOut &&
       pesan.toLowerCase().includes("logged out");
