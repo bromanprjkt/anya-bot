@@ -1,6 +1,8 @@
 import makeWASocket, {
   type WASocket,
   fetchLatestBaileysVersion,
+  Browsers,
+  makeCacheableSignalKeyStore,
 } from "@whiskeysockets/baileys";
 import path from "node:path";
 import { KonfigurasiEnv } from "../config/env.js";
@@ -45,7 +47,7 @@ export class KlienWhatsApp {
 
       this.pengelolaSesi = await inisialisasiSesiWhatsApp(jalurSesi);
       const { version, isLatest } = await fetchLatestBaileysVersion().catch(() => ({
-        version: [2, 3000, 1015901307] as [number, number, number],
+        version: [2, 3000, 1043857760] as [number, number, number],
         isLatest: false,
       }));
 
@@ -54,14 +56,27 @@ export class KlienWhatsApp {
         "Membuat soket koneksi WhatsApp"
       );
 
+      const pencatatSoket = buatPencatat("BaileysSocket");
+
       const soketBaru = makeWASocket({
         version,
-        auth: this.pengelolaSesi.statusAutentikasi,
+        auth: {
+          creds: this.pengelolaSesi.statusAutentikasi.creds,
+          keys: makeCacheableSignalKeyStore(
+            this.pengelolaSesi.statusAutentikasi.keys,
+            pencatatSoket as any
+          ),
+        },
         printQRInTerminal: false,
-        logger: buatPencatat("BaileysSocket") as any, // Baileys membutuhkan format logger Pino
-        browser: ["Anya Bot", "Chrome", "1.0.0"],
+        logger: pencatatSoket as any,
+        browser: Browsers.ubuntu("Chrome"),
+        generateHighQualityLinkPreview: true,
         syncFullHistory: false,
         markOnlineOnConnect: true,
+        connectTimeoutMs: 60000,
+        defaultQueryTimeoutMs: 60000,
+        keepAliveIntervalMs: 30000,
+        retryRequestDelayMs: 250,
       });
 
       this.soket = soketBaru;
