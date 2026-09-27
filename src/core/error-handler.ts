@@ -38,9 +38,6 @@ export class KesalahanBatasWaktu extends Error {
   }
 }
 
-/**
- * Menangani kesalahan eksekusi perintah secara aman tanpa membocorkan stack trace ke WhatsApp.
- */
 export async function tanganiKesalahanPerintah(
   kesalahan: unknown,
   konteks: KonteksPerintah

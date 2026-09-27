@@ -33,12 +33,12 @@ export const perintahSticker: PerintahBot = {
           if (adalahVideo) {
             return await layananStiker.videoKeStikerAnimasi(bufferMedia, {
               namaPaket: "Anya Bot",
-              pembuat: konteks.namaPengirim,
+              pembuat: "github@bromanprjkt",
             });
           }
           return await layananStiker.gambarKeStiker(bufferMedia, {
             namaPaket: "Anya Bot",
-            pembuat: konteks.namaPengirim,
+            pembuat: "github@bromanprjkt",
           });
         }
       );

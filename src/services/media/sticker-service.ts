@@ -19,7 +19,7 @@ export interface MetadataStiker {
 /**
  * Membangun buffer EXIF WebP untuk metadata stiker WhatsApp.
  */
-function buatBufferExif(namaPaket: string = "Anya Bot", pembuat: string = "Anya Team"): Buffer {
+function buatBufferExif(namaPaket: string = "Anya Bot", pembuat: string = "github@bromanprjkt"): Buffer {
   const jsonMetadata = {
     "sticker-pack-id": "anya-bot-pack",
     "sticker-pack-name": namaPaket,

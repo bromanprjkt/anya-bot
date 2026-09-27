@@ -31,8 +31,8 @@ export const perintahQC: PerintahBot = {
         teksKutipan,
         namaKutipan,
         {
-          namaPaket: "Anya Bot QC",
-          pembuat: namaKutipan,
+          namaPaket: "Anya Bot",
+          pembuat: "github@bromanprjkt",
         }
       );
 

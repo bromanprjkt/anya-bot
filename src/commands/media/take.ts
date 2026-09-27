@@ -16,7 +16,7 @@ export const perintahTake: PerintahBot = {
 
     const bagian = konteks.teksArgumen.split("|").map((item) => item.trim());
     const namaPaket = bagian[0] || "Anya Bot";
-    const pembuat = bagian[1] || konteks.namaPengirim;
+    const pembuat = bagian[1] || "github@bromanprjkt";
 
     try {
       const gambar = await layananStiker.stikerKeGambar(bufferMedia);
