@@ -167,35 +167,8 @@ Sesi login WhatsApp dan database SQLite tersimpan persisten pada folder `./data`
 
 ---
 
-## 8. Struktur Direktori
 
-```text
-anya-bot/
-├── banner.png                  # Banner menu bot
-├── compose.yaml                # Konfigurasi Docker Compose
-├── Dockerfile                  # Definisi kontainer multi-stage build
-├── package.json                # Dependensi dan skrip proyek
-├── tsconfig.json               # Konfigurasi TypeScript strict mode
-├── vitest.config.ts            # Konfigurasi unit test Vitest
-├── .env.example                # Contoh konfigurasi lingkungan
-├── .gitignore                  # Aturan file yang diabaikan git
-├── data/                       # Penyimpanan database SQLite dan sesi WhatsApp
-├── temp/                       # Folder kerja pemrosesan media sementara
-├── tests/                      # Suite unit test
-└── src/
-    ├── app.ts                  # Kelas daur hidup aplikasi utama
-    ├── index.ts                # Titik masuk aplikasi
-    ├── config/                 # Skema Zod dan konfigurasi bawaan
-    ├── core/                   # Router perintah, registri, perizinan, rate limiter
-    ├── commands/               # Definisi perintah (umum, media, grup, moderasi, admin)
-    ├── repositories/           # Pengelolaan data SQLite (user, group, warning)
-    ├── services/               # Layanan stiker, antrean media, downloader
-    ├── utils/                  # Logger Pino
-    └── whatsapp/               # Koneksi Baileys dan event handler
-```
 
----
+## 8. Lisensi
 
-## 9. Lisensi
-
-ISC License.
+GPL License.
