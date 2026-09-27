@@ -37,7 +37,8 @@ pnpm-debug.log*
 coverage/
 .nyc_output/
 
-# OS / Editor
+# OS / Editor / User Chat Uploads
+image*.png
 .DS_Store
 Thumbs.db
 .idea/
