@@ -51,12 +51,6 @@ export interface KonfigurasiEnv {
   versiBot: string;
 }
 
-/**
- * Mengurai dan memvalidasi konfigurasi lingkungan.
- *
- * @param variabelLingkungan Objek variabel lingkungan (bawaan: process.env)
- * @returns KonfigurasiEnv yang telah tervalidasi dengan identifier Bahasa Indonesia
- */
 export function uraiKonfigurasiEnv(
   variabelLingkungan: NodeJS.ProcessEnv = process.env
 ): KonfigurasiEnv {

@@ -82,11 +82,9 @@ describe("Perintah Umum (General Commands)", () => {
     expect(konteks.balas).toHaveBeenCalledTimes(1);
     const pesanBalasan = (konteks.balas as any).mock.calls[0][0];
 
-    // Perintah umum harus muncul
     expect(pesanBalasan).toContain("!ping");
     expect(pesanBalasan).toContain("Umum");
 
-    // Perintah grup dan admin bot TIDAK BOLEH muncul
     expect(pesanBalasan).not.toContain("!tagall");
     expect(pesanBalasan).not.toContain("!botstats");
     expect(pesanBalasan).not.toContain("Alat Grup");

@@ -6,9 +6,6 @@ import type { HasilUnduhan } from "./downloader-adapter.js";
 
 const pencatat = buatPencatat("PengunduhTikTok");
 
-/**
- * Mengambil tautan video TikTok tanpa watermark menggunakan TikWM.
- */
 async function unduhViaTikwm(tautan: string): Promise<HasilUnduhan> {
   const respon = await axios.post(
     "https://www.tikwm.com/api/",
@@ -32,7 +29,6 @@ async function unduhViaTikwm(tautan: string): Promise<HasilUnduhan> {
     throw new Error("Respon TikWM kosong atau tidak valid.");
   }
 
-  // Jika postingan bertipe album gambar (slideshow)
   if (!data.size && Array.isArray(data.images) && data.images.length > 0) {
     return {
       berhasil: true,
@@ -60,9 +56,6 @@ async function unduhViaTikwm(tautan: string): Promise<HasilUnduhan> {
   };
 }
 
-/**
- * Mengambil tautan video TikTok tanpa watermark menggunakan SSSTik (fallback anti-403).
- */
 async function unduhViaSsstik(tautan: string): Promise<HasilUnduhan> {
   const responBeranda = await axios.get("https://ssstik.io/en", {
     headers: {
@@ -140,9 +133,6 @@ async function unduhViaSsstik(tautan: string): Promise<HasilUnduhan> {
   throw new Error("Tautan unduhan tidak ditemukan pada SSSTik.");
 }
 
-/**
- * Mengunduh media TikTok dengan dual-engine (TikWM dengan cadangan SSSTik).
- */
 export async function unduhVideoTikTok(tautan: string): Promise<HasilUnduhan> {
   try {
     return await unduhViaTikwm(tautan);

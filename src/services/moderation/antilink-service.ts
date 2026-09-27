@@ -12,7 +12,6 @@ export class LayananAntiTautan {
     "wikipedia.org",
   ]);
 
-  // Pola regex deteksi URL HTTP/HTTPS dan tautan undangan grup WhatsApp
   private readonly polaTautan = /(?:https?:\/\/|www\.)[^\s/$.?#].[^\s]*/gi;
   private readonly polaUndanganGrupWa = /chat\.whatsapp\.com\/[a-zA-Z0-9]{20,24}/i;
 
@@ -25,25 +24,15 @@ export class LayananAntiTautan {
     return Array.from(this.daftarDomainDiizinkan);
   }
 
-  /**
-   * Mengekstrak seluruh URL yang terdapat dalam teks.
-   */
   public ekstrakTautan(teks: string): string[] {
     const hasil = teks.match(this.polaTautan);
     return hasil ? Array.from(hasil) : [];
   }
 
-  /**
-   * Memeriksa apakah teks memuat tautan undangan grup WhatsApp (chat.whatsapp.com).
-   */
   public adalahTautanGrupWhatsApp(teks: string): boolean {
     return this.polaUndanganGrupWa.test(teks);
   }
 
-  /**
-   * Memeriksa apakah suatu teks mengandung tautan terlarang
-   * (tidak ada dalam daftar domain diizinkan atau merupakan undangan grup WhatsApp).
-   */
   public apakahTautanTerlarang(teks: string): boolean {
     if (this.adalahTautanGrupWhatsApp(teks)) {
       return true;

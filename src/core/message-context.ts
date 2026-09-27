@@ -14,7 +14,7 @@ export interface PesanKutipan {
   adalahGambar: boolean;
   adalahVideo: boolean;
   adalahStiker: boolean;
-  pesanMentah: any; // Format internal Baileys
+  pesanMentah: any; 
 }
 
 export interface KonteksPerintah {
@@ -35,9 +35,6 @@ export interface KonteksPerintah {
   unduhMedia: () => Promise<Buffer | null>;
 }
 
-/**
- * Mengunduh media dari pesan langsung atau pesan kutipan (quoted).
- */
 export async function unduhMediaPesan(
   pesan: WAMessage,
   soket: WASocket

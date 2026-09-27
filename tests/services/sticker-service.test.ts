@@ -6,7 +6,6 @@ describe("LayananStiker", () => {
   const layanan = new LayananStiker();
 
   it("harus mengonversi gambar ke stiker WebP 512x512 dengan metadata", async () => {
-    // Buat gambar PNG uji berukuran 100x100 berwarna merah
     const bufferGambar = await sharp({
       create: {
         width: 100,

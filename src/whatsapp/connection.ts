@@ -47,7 +47,6 @@ export function tanganiPembaruanKoneksi(
       "Koneksi WhatsApp terputus"
     );
 
-    // Jangan menghubungkan ulang jika pengguna telah logout dari perangkat
     if (adalahLogout) {
       pencatat.error("Perangkat keluar (logged out). Hapus sesi sebelum memindai ulang.");
       return {

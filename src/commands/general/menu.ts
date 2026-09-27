@@ -10,25 +10,19 @@ const URL_BANNER =
 const JALUR_BANNER_LOKAL = path.resolve(process.cwd(), "banner.png");
 let memoriBufferBanner: Buffer | null = null;
 
-/**
- * Mengambil buffer banner bot baik dari berkas lokal atau unduhan online.
- */
 async function ambilBufferBanner(): Promise<Buffer | null> {
   if (memoriBufferBanner) {
     return memoriBufferBanner;
   }
 
-  // Prioritaskan berkas lokal jika tersedia
   if (fs.existsSync(JALUR_BANNER_LOKAL)) {
     try {
       memoriBufferBanner = fs.readFileSync(JALUR_BANNER_LOKAL);
       return memoriBufferBanner;
     } catch {
-      // Abaikan jika berkas lokal tidak dapat dibaca
     }
   }
 
-  // Unduh dari URL online jika berkas lokal belum ada
   try {
     const respon = await fetch(URL_BANNER);
     if (respon.ok) {
@@ -37,16 +31,11 @@ async function ambilBufferBanner(): Promise<Buffer | null> {
       return buffer;
     }
   } catch {
-    // Abaikan jika unduhan gagal
   }
 
   return null;
 }
 
-/**
- * Membuat perintah menu kontekstual yang ringkas dan hanya menampilkan
- * perintah yang berhak diakses oleh pengguna terkait.
- */
 export function buatPerintahMenu(registri: RegistriPerintah): PerintahBot {
   return {
     nama: "menu",
@@ -57,7 +46,6 @@ export function buatPerintahMenu(registri: RegistriPerintah): PerintahBot {
       const awalan = konfigurasiEnv.awalanPerintah;
       const semuaPerintah = registri.ambilSemua();
 
-      // Filter hanya perintah yang diizinkan untuk pengguna & konteks saat ini
       const perintahTersedia = semuaPerintah.filter(
         (perintah) => periksaIzinPerintah(perintah, konteks).diizinkan
       );
@@ -102,7 +90,6 @@ export function buatPerintahMenu(registri: RegistriPerintah): PerintahBot {
           );
           return;
         } catch {
-          // Fallback ke pesan teks jika gagal mengirim gambar
         }
       }
 

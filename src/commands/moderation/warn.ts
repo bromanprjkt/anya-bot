@@ -34,7 +34,7 @@ export const perintahWarn: PerintahBot = {
     );
 
     const nomorTarget = targetJid.split("@")[0];
-    let balasan = `⚠️ *Peringatan Diberikan*\n`;
+    let balasan = `*Peringatan Diberikan*\n`;
     balasan += `Kepada: @${nomorTarget}\n`;
     balasan += `Alasan: ${alasan}\n`;
     balasan += `Total Peringatan: ${totalPeringatan}/3`;

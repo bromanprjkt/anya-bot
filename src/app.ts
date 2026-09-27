@@ -77,9 +77,6 @@ export class AplikasiAnya {
     this.daftarkanSemuaPerintah();
   }
 
-  /**
-   * Mendaftarkan seluruh perintah bot ke registri perintah pusat.
-   */
   private daftarkanSemuaPerintah(): void {
     this.registriPerintah.daftarkan(perintahPing);
     this.registriPerintah.daftarkan(perintahOwner);
@@ -116,9 +113,6 @@ export class AplikasiAnya {
     );
   }
 
-  /**
-   * Menyiapkan direktori penyimpanan lokal jika belum ada.
-   */
   private inisialisasiDirektori(): void {
     const jalurFolderData = path.dirname(this.konfigurasi.jalurDatabase);
     if (!fs.existsSync(jalurFolderData)) {
@@ -130,9 +124,6 @@ export class AplikasiAnya {
     }
   }
 
-  /**
-   * Menangani pemrosesan pesan masuk WhatsApp dengan filter moderasi.
-   */
   public async tanganiPesanMasuk(soket: WASocket, pesan: WAMessage): Promise<void> {
     const idObrolan = pesan.key.remoteJid ?? "";
     const adalahGrup = idObrolan.endsWith("@g.us");
@@ -141,7 +132,6 @@ export class AplikasiAnya {
       : idObrolan;
     const namaPengirim = pesan.pushName ?? "Pengguna";
 
-    // Auto Read: Tandai pesan sebagai telah dibaca (centang biru) otomatis
     if (apakahBacaOtomatisAktif() && pesan.key && !pesan.key.fromMe) {
       try {
         await soket.readMessages([pesan.key]);
@@ -164,7 +154,7 @@ export class AplikasiAnya {
         await soket.sendMessage(
           idObrolan,
           {
-            text: `⚠️ @${idPengirim.split("@")[0]}, tautan terlarang dilarang dikirim di grup ini!`,
+            text: `@${idPengirim.split("@")[0]}, tautan terlarang dilarang dikirim di grup ini!`,
             mentions: [idPengirim],
           },
           { quoted: pesan }
@@ -199,9 +189,6 @@ export class AplikasiAnya {
     await this.perutePerintah.prosesPesan(soket, pesan);
   }
 
-  /**
-   * Menangani acara pembaruan peserta grup (welcome / goodbye).
-   */
   public async tanganiPembaruanPeserta(
     soket: WASocket,
     idGrup: string,
@@ -227,9 +214,6 @@ export class AplikasiAnya {
     }
   }
 
-  /**
-   * Memulai aplikasi dan menghubungkan ke WhatsApp.
-   */
   public async mulai(hubungkanWhatsApp: boolean = true): Promise<void> {
     if (this.sedangBerjalan) {
       this.pencatat.warn("Aplikasi sudah dalam keadaan berjalan");
@@ -247,7 +231,6 @@ export class AplikasiAnya {
     this.inisialisasiDirektori();
     ambilBasisData(this.konfigurasi.jalurDatabase);
 
-    // Jalankan pembersihan berkas sementara setiap 30 menit
     this.intervalPembersihSementara = setInterval(() => {
       void layananPenyimpananSementara.bersihkanBerkasKedaluwarsa();
       pembatasFrekuensi.bersihkanDataUsang();
@@ -273,9 +256,6 @@ export class AplikasiAnya {
     this.pencatat.info("Anya Bot berhasil dimulai dan siap digunakan");
   }
 
-  /**
-   * Menghentikan bot secara aman (graceful shutdown).
-   */
   public async berhenti(): Promise<void> {
     if (!this.sedangBerjalan) {
       return;

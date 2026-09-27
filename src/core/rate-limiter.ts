@@ -24,7 +24,6 @@ export class PembatasFrekuensi {
       this.petaCatatan.set(kunci, catatan);
     }
 
-    // Singkirkan stempel waktu di luar jendela waktu aktif
     catatan.stempelWaktu = catatan.stempelWaktu.filter(
       (waktu) => sekarang - waktu < jendelaMilidetik
     );
@@ -57,9 +56,6 @@ export class PembatasFrekuensi {
     }
   }
 
-  /**
-   * Membersihkan kunci yang sudah tidak aktif untuk mencegah memory leak.
-   */
   public bersihkanDataUsang(kedaluwarsaMilidetik: number = 60000): void {
     const sekarang = Date.now();
     for (const [kunci, catatan] of this.petaCatatan.entries()) {

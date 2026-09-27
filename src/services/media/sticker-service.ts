@@ -16,15 +16,12 @@ export interface MetadataStiker {
   pembuat?: string;
 }
 
-/**
- * Membangun buffer EXIF WebP untuk metadata stiker WhatsApp.
- */
 function buatBufferExif(namaPaket: string = "Anya Bot", pembuat: string = "github@bromanprjkt"): Buffer {
   const jsonMetadata = {
     "sticker-pack-id": "anya-bot-pack",
     "sticker-pack-name": namaPaket,
     "sticker-pack-publisher": pembuat,
-    emojis: ["✨"],
+    emojis: [],
   };
 
   const stringJson = JSON.stringify(jsonMetadata);
@@ -46,9 +43,6 @@ function buatBufferExif(namaPaket: string = "Anya Bot", pembuat: string = "githu
   return Buffer.concat([headerExif, payload]);
 }
 
-/**
- * Menyisipkan chunk EXIF ke dalam berkas WebP sesuai standar Extended WebP (VP8X).
- */
 function sisipkanExifKeWebp(
   bufferWebp: Buffer,
   bufferExif: Buffer,
@@ -140,7 +134,7 @@ export class LayananStiker {
           async (jalurOutput) => {
             await new Promise<void>((selesai, tolak) => {
               ffmpeg(jalurInput)
-                .inputOptions(["-t 10"]) // Batas durasi maksimal 10 detik
+                .inputOptions(["-t 10"])
                 .outputOptions([
                   "-vcodec libwebp",
                   "-vf scale=512:512:force_original_aspect_ratio=decrease,fps=15,pad=512:512:(ow-iw)/2:(oh-ih)/2:color=white@0.0",
@@ -176,9 +170,6 @@ export class LayananStiker {
     return await sharp(bufferStiker).png().toBuffer();
   }
 
-  /**
-   * Menghasilkan stiker kutipan percakapan (Quote Chat / QC) sederhana dalam bentuk WebP.
-   */
   public async buatStikerKutipan(
     teksKutipan: string,
     namaPengirim: string,

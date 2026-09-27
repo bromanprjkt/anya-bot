@@ -54,9 +54,6 @@ export class AntreanPekerjaanMedia {
     });
   }
 
-  /**
-   * Memproses item berikutnya jika kapasitas konkurensi mencukupi.
-   */
   private prosesBerikutnya(): void {
     if (this.jumlahSedangBerjalan >= this.batasKonkurensi) {
       return;

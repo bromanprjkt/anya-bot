@@ -20,9 +20,6 @@ export interface PenyediaPengunduh {
   unduh: (tautan: string) => Promise<HasilUnduhan>;
 }
 
-/**
- * Penyedia pengunduh bawaan untuk TikTok dengan dual-engine (TikWM & SSSTik).
- */
 export class PenyediaTikTok implements PenyediaPengunduh {
   public readonly nama = "PenyediaTikTok";
 
@@ -36,9 +33,6 @@ export class PenyediaTikTok implements PenyediaPengunduh {
   }
 }
 
-/**
- * Penyedia pengunduh bawaan untuk Instagram dengan dual-engine (GraphQL & SnapSave).
- */
 export class PenyediaInstagram implements PenyediaPengunduh {
   public readonly nama = "PenyediaInstagram";
 
@@ -51,9 +45,6 @@ export class PenyediaInstagram implements PenyediaPengunduh {
   }
 }
 
-/**
- * Penyedia pengunduh berbasis HTTP API scraper eksternal kustom.
- */
 export class PenyediaApiEksternal implements PenyediaPengunduh {
   public readonly nama = "ScraperApiEksternal";
 
@@ -141,9 +132,6 @@ export class PenyediaApiEksternal implements PenyediaPengunduh {
   }
 }
 
-/**
- * Layanan utama pengunduh media yang mengorkestrasi berbagai adapter penyedia.
- */
 export class LayananPengunduh {
   private readonly daftarPenyedia: PenyediaPengunduh[] = [];
 
@@ -167,9 +155,6 @@ export class LayananPengunduh {
     return await penyediaCocok.unduh(tautan);
   }
 
-  /**
-   * Mengambil file biner dari URL media yang diberikan dengan tajuk proteksi sesuai sumber.
-   */
   public async ambilBufferMedia(urlMedia: string): Promise<Buffer> {
     const tajuk: Record<string, string> = {
       "User-Agent":

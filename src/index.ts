@@ -3,9 +3,6 @@ import { buatPencatat } from "./utils/logger.js";
 
 const pencatat = buatPencatat("Bootstrap");
 
-/**
- * Titik masuk utama untuk menjalankan Anya Bot.
- */
 async function jalankanAplikasi(): Promise<void> {
   const aplikasi = new AplikasiAnya();
 

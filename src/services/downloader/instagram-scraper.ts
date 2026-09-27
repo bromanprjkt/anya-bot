@@ -74,9 +74,6 @@ function enkripsiDataPermintaanGraphql(kodePendek: string): string {
   return qs.stringify(dataPermintaan);
 }
 
-/**
- * Mengambil tautan Instagram via GraphQL API Instagram.
- */
 async function unduhViaGraphql(tautan: string): Promise<HasilUnduhan> {
   const idPost = ambilIdPostInstagram(tautan);
   if (!idPost) {
@@ -118,9 +115,6 @@ async function unduhViaGraphql(tautan: string): Promise<HasilUnduhan> {
   };
 }
 
-/**
- * Dekoder JavaScript terobfuskasi SnapSave.
- */
 function dekodeDataSnapSave(dataLarik: string[]): string {
   const bagian1 = dataLarik[0];
   const bagian3 = dataLarik[2];
@@ -182,9 +176,6 @@ function dekodeDataSnapSave(dataLarik: string[]): string {
   return decodeURIComponent(encodeURIComponent(hasilString));
 }
 
-/**
- * Mengambil tautan Instagram via SnapSave scraper.
- */
 async function unduhViaSnapSave(tautan: string): Promise<HasilUnduhan> {
   const respon = await axios.post(
     "https://snapsave.app/action.php?lang=id",
@@ -250,9 +241,6 @@ async function unduhViaSnapSave(tautan: string): Promise<HasilUnduhan> {
   };
 }
 
-/**
- * Mengunduh media Instagram dengan dual-engine (GraphQL dengan cadangan SnapSave).
- */
 export async function unduhMediaInstagram(tautan: string): Promise<HasilUnduhan> {
   try {
     return await unduhViaGraphql(tautan);

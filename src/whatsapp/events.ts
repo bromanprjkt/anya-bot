@@ -48,7 +48,6 @@ export function daftarkanAcaraWhatsApp(
     if (data.type !== "notify") return;
 
     for (const pesan of data.messages) {
-      // Abaikan pesan dari diri sendiri atau pesan protokol sistem
       if (!pesan.message || pesan.key.fromMe) continue;
 
       if (pendengarPesan) {

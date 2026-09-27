@@ -19,20 +19,12 @@ export class LayananPenyimpananSementara {
     }
   }
 
-  /**
-   * Menghasilkan jalur berkas acak yang unik di dalam folder sementara.
-   *
-   * @param ekstensi Ekstensi berkas (misal: "webp", "mp4", "png")
-   */
   public buatJalurSementara(ekstensi: string): string {
     const idAcak = crypto.randomUUID();
     const namaBerkas = `anya_${idAcak}.${ekstensi.replace(/^\./, "")}`;
     return path.join(this.direktoriSementara, namaBerkas);
   }
 
-  /**
-   * Menghapus berkas sementara secara aman jika ada.
-   */
   public async bersihkanBerkas(jalurBerkas: string): Promise<void> {
     try {
       if (fsSync.existsSync(jalurBerkas)) {
@@ -44,11 +36,6 @@ export class LayananPenyimpananSementara {
     }
   }
 
-  /**
-   * Menghapus berkas-berkas sementara lama yang tertinggal (misal lebih dari 30 menit).
-   *
-   * @param usiaMaksimumMilidetik Batas usia berkas sebelum dihapus (bawaan: 30 menit)
-   */
   public async bersihkanBerkasKedaluwarsa(
     usiaMaksimumMilidetik: number = 30 * 60 * 1000
   ): Promise<number> {
@@ -68,7 +55,6 @@ export class LayananPenyimpananSementara {
             totalDihapus++;
           }
         } catch {
-          // Abaikan kesalahan pembacaan individual
         }
       }
 
@@ -85,10 +71,6 @@ export class LayananPenyimpananSementara {
     return totalDihapus;
   }
 
-  /**
-   * Menjalankan suatu fungsi proses yang menggunakan berkas sementara,
-   * dan memastikan berkas tersebut selalu terhapus setelah proses selesai.
-   */
   public async bungkusDenganPembersihan<T>(
     proses: (jalurSementara: string) => Promise<T>,
     ekstensi: string = "tmp"

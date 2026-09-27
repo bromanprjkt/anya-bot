@@ -1,6 +1,3 @@
-/**
- * Nilai konstanta bawaan untuk konfigurasi Anya Bot.
- */
 export const KONFIGURASI_BAWAAN = {
   VERSI_BOT: "0.1 beta",
   AWALAN_PERINTAH: "!",
