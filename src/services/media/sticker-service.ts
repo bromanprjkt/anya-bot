@@ -205,6 +205,65 @@ export class LayananStiker {
     const svgBuffer = Buffer.from(svgGelembung, "utf-8");
     return await this.gambarKeStiker(svgBuffer, metadata);
   }
+
+  public async buatStikerTeks(
+    teks: string,
+    metadata?: MetadataStiker
+  ): Promise<Buffer> {
+    const barisMentah = teks.split(/\r?\n/);
+    const daftarBaris: string[] = [];
+    const batasKarakter = 13;
+
+    for (const baris of barisMentah) {
+      const kataLarik = baris.trim().split(/\s+/);
+      let barisSaatIni = "";
+
+      for (const kata of kataLarik) {
+        if (!kata) continue;
+        if (!barisSaatIni) {
+          barisSaatIni = kata;
+        } else if ((barisSaatIni + " " + kata).length <= batasKarakter) {
+          barisSaatIni += " " + kata;
+        } else {
+          daftarBaris.push(barisSaatIni);
+          barisSaatIni = kata;
+        }
+      }
+      if (barisSaatIni) {
+        daftarBaris.push(barisSaatIni);
+      }
+    }
+
+    const barisFinal = daftarBaris.length > 0 ? daftarBaris : [teks];
+    const ukuranFont = barisFinal.length <= 2 ? 52 : barisFinal.length <= 4 ? 44 : 34;
+    const jarakBaris = Math.round(ukuranFont * 1.3);
+    const totalTinggi = barisFinal.length * jarakBaris;
+    const yAwal = Math.round((512 - totalTinggi) / 2 + ukuranFont * 0.9);
+
+    const tspans = barisFinal
+      .map((b, i) => {
+        const teksAman = b
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&apos;");
+        return `<tspan x="50%" y="${yAwal + i * jarakBaris}">${teksAman}</tspan>`;
+      })
+      .join("");
+
+    const svgTeks = `
+      <svg width="512" height="512" xmlns="http://www.w3.org/2000/svg">
+        <rect width="512" height="512" fill="#ffffff"/>
+        <text x="50%" text-anchor="middle" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="${ukuranFont}" font-weight="bold" fill="#000000">
+          ${tspans}
+        </text>
+      </svg>
+    `;
+
+    const svgBuffer = Buffer.from(svgTeks, "utf-8");
+    return await this.gambarKeStiker(svgBuffer, metadata);
+  }
 }
 
 export const layananStiker = new LayananStiker();

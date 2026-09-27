@@ -55,4 +55,15 @@ describe("LayananStiker", () => {
     const info = await sharp(stikerQC).metadata();
     expect(info.format).toBe("webp");
   });
+
+  it("harus membuat stiker teks (TTP) multi-baris berformat WebP 512x512", async () => {
+    const stikerTeks = await layanan.buatStikerTeks("sekali liat langsung #minat");
+    expect(stikerTeks).toBeDefined();
+    expect(stikerTeks.length).toBeGreaterThan(0);
+
+    const info = await sharp(stikerTeks).metadata();
+    expect(info.format).toBe("webp");
+    expect(info.width).toBe(512);
+    expect(info.height).toBe(512);
+  });
 });
