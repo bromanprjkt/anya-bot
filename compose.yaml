@@ -1,0 +1,16 @@
+services:
+  anya-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: anya-bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+      - DATABASE_PATH=/app/data/anya.db
+      - TEMP_DIRECTORY=/app/temp
+    volumes:
+      - ./data:/app/data
+      - ./temp:/app/temp

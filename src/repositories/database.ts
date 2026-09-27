@@ -1,0 +1,83 @@
+import Database from "better-sqlite3";
+import fs from "node:fs";
+import path from "node:path";
+import { buatPencatat } from "../utils/logger.js";
+import { konfigurasiEnv } from "../config/env.js";
+
+const pencatat = buatPencatat("BasisData");
+
+let instanceBasisData: Database.Database | null = null;
+
+/**
+ * Menginisialisasi skema tabel basis data SQLite jika belum dibuat.
+ */
+function inisialisasiSkema(db: Database.Database): void {
+  pencatat.info("Menyiapkan skema tabel basis data SQLite...");
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS groups (
+      id_grup TEXT PRIMARY KEY,
+      nama_grup TEXT NOT NULL,
+      welcome_aktif INTEGER DEFAULT 0,
+      goodbye_aktif INTEGER DEFAULT 0,
+      antilink_aktif INTEGER DEFAULT 0,
+      antispam_aktif INTEGER DEFAULT 0,
+      dibuat_pada TEXT NOT NULL,
+      diperbarui_pada TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS users (
+      id_pengguna TEXT PRIMARY KEY,
+      nama_pengguna TEXT NOT NULL,
+      total_pesan INTEGER DEFAULT 0,
+      dibuat_pada TEXT NOT NULL,
+      diperbarui_pada TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS warnings (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id_grup TEXT NOT NULL,
+      id_pengguna TEXT NOT NULL,
+      alasan TEXT NOT NULL,
+      diberikan_oleh TEXT NOT NULL,
+      dibuat_pada TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS bot_settings (
+      kunci TEXT PRIMARY KEY,
+      nilai TEXT NOT NULL
+    );
+  `);
+
+  pencatat.info("Skema basis data SQLite berhasil disiapkan");
+}
+
+/**
+ * Mendapatkan atau membuat instance koneksi basis data SQLite.
+ */
+export function ambilBasisData(jalurKustom?: string): Database.Database {
+  if (instanceBasisData && !jalurKustom) {
+    return instanceBasisData;
+  }
+
+  const jalurDb = jalurKustom ?? konfigurasiEnv.jalurDatabase;
+  const folder = path.dirname(jalurDb);
+
+  if (!fs.existsSync(folder)) {
+    fs.mkdirSync(folder, { recursive: true });
+  }
+
+  pencatat.info({ jalur: jalurDb }, "Membuka koneksi ke basis data SQLite");
+
+  const db = new Database(jalurDb);
+  db.pragma("journal_mode = WAL");
+  db.pragma("foreign_keys = ON");
+
+  inisialisasiSkema(db);
+
+  if (!jalurKustom) {
+    instanceBasisData = db;
+  }
+
+  return db;
+}

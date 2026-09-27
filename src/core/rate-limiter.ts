@@ -1,0 +1,86 @@
+interface CatatanFrekuensi {
+  stempelWaktu: number[];
+}
+
+export interface HasilBatasFrekuensi {
+  diizinkan: boolean;
+  sisaWaktuMilidetik: number;
+  totalPermintaan: number;
+}
+
+export class PembatasFrekuensi {
+  private readonly petaCatatan = new Map<string, CatatanFrekuensi>();
+
+  /**
+   * Memeriksa apakah permintaan dengan kunci tertentu melebihi batas frekuensi yang diizinkan.
+   *
+   * @param kunci Identifier unik (misal: "user:123" atau "group:456")
+   * @param batasMaksimal Jumlah aksi maksimal dalam satu jendela waktu
+   * @param jendelaMilidetik Rentang jendela waktu dalam milidetik (misal: 10000 ms)
+   */
+  public periksaBatas(
+    kunci: string,
+    batasMaksimal: number = 5,
+    jendelaMilidetik: number = 10000
+  ): HasilBatasFrekuensi {
+    const sekarang = Date.now();
+    let catatan = this.petaCatatan.get(kunci);
+
+    if (!catatan) {
+      catatan = { stempelWaktu: [] };
+      this.petaCatatan.set(kunci, catatan);
+    }
+
+    // Singkirkan stempel waktu di luar jendela waktu aktif
+    catatan.stempelWaktu = catatan.stempelWaktu.filter(
+      (waktu) => sekarang - waktu < jendelaMilidetik
+    );
+
+    if (catatan.stempelWaktu.length >= batasMaksimal) {
+      const stempelTertua = catatan.stempelWaktu[0] ?? sekarang;
+      const sisaWaktu = Math.max(0, jendelaMilidetik - (sekarang - stempelTertua));
+
+      return {
+        diizinkan: false,
+        sisaWaktuMilidetik: sisaWaktu,
+        totalPermintaan: catatan.stempelWaktu.length,
+      };
+    }
+
+    catatan.stempelWaktu.push(sekarang);
+
+    return {
+      diizinkan: true,
+      sisaWaktuMilidetik: 0,
+      totalPermintaan: catatan.stempelWaktu.length,
+    };
+  }
+
+  /**
+   * Menghapus catatan untuk kunci tertentu atau seluruhnya.
+   */
+  public reset(kunci?: string): void {
+    if (kunci) {
+      this.petaCatatan.delete(kunci);
+    } else {
+      this.petaCatatan.clear();
+    }
+  }
+
+  /**
+   * Membersihkan kunci yang sudah tidak aktif untuk mencegah memory leak.
+   */
+  public bersihkanDataUsang(kedaluwarsaMilidetik: number = 60000): void {
+    const sekarang = Date.now();
+    for (const [kunci, catatan] of this.petaCatatan.entries()) {
+      catatan.stempelWaktu = catatan.stempelWaktu.filter(
+        (waktu) => sekarang - waktu < kedaluwarsaMilidetik
+      );
+      if (catatan.stempelWaktu.length === 0) {
+        this.petaCatatan.delete(kunci);
+      }
+    }
+  }
+}
+
+export const pembatasFrekuensi = new PembatasFrekuensi();
