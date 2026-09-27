@@ -3,7 +3,7 @@ import { perintahPing } from "../../src/commands/general/ping.js";
 import { perintahOwner } from "../../src/commands/general/owner.js";
 import { buatPerintahMenu } from "../../src/commands/general/menu.js";
 import { buatPerintahHelp } from "../../src/commands/general/help.js";
-import { RegistriPerintah } from "../../src/core/command-registry.js";
+import { RegistriPerintah, type PerintahBot } from "../../src/core/command-registry.js";
 import type { KonteksPerintah } from "../../src/core/message-context.js";
 
 describe("Perintah Umum (General Commands)", () => {
@@ -44,19 +44,80 @@ describe("Perintah Umum (General Commands)", () => {
     expect(konteks.balas).toHaveBeenCalledTimes(1);
   });
 
-  it("perintah menu harus menampilkan daftar perintah yang dikelompokkan", async () => {
+  it("perintah menu harus menyembunyikan perintah grup dan admin dari pengguna biasa di private chat", async () => {
     const registri = new RegistriPerintah();
     registri.daftarkan(perintahPing);
 
+    const perintahGrupDummy: PerintahBot = {
+      nama: "tagall",
+      alias: [],
+      deskripsi: "Tag all",
+      kategori: "group",
+      hanyaGrup: true,
+      membutuhkanAdmin: true,
+      jalankan: async () => {},
+    };
+    registri.daftarkan(perintahGrupDummy);
+
+    const perintahAdminDummy: PerintahBot = {
+      nama: "botstats",
+      alias: [],
+      deskripsi: "Stats",
+      kategori: "admin",
+      hanyaPemilik: true,
+      jalankan: async () => {},
+    };
+    registri.daftarkan(perintahAdminDummy);
+
     const perintahMenu = buatPerintahMenu(registri);
-    const konteks = buatKonteksTiruan({ namaPerintah: "menu" });
+    const konteks = buatKonteksTiruan({
+      namaPerintah: "menu",
+      adalahGrup: false,
+      adalahAdmin: false,
+      adalahPemilik: false,
+    });
 
     await perintahMenu.jalankan(konteks);
 
     expect(konteks.balas).toHaveBeenCalledTimes(1);
     const pesanBalasan = (konteks.balas as any).mock.calls[0][0];
+
+    // Perintah umum harus muncul
     expect(pesanBalasan).toContain("!ping");
     expect(pesanBalasan).toContain("Umum");
+
+    // Perintah grup dan admin bot TIDAK BOLEH muncul
+    expect(pesanBalasan).not.toContain("!tagall");
+    expect(pesanBalasan).not.toContain("!botstats");
+    expect(pesanBalasan).not.toContain("Alat Grup");
+    expect(pesanBalasan).not.toContain("Khusus Admin Bot");
+  });
+
+  it("perintah menu harus menampilkan perintah grup jika pengguna adalah admin grup", async () => {
+    const registri = new RegistriPerintah();
+    registri.daftarkan({
+      nama: "tagall",
+      alias: ["all"],
+      deskripsi: "Tag all",
+      kategori: "group",
+      hanyaGrup: true,
+      membutuhkanAdmin: true,
+      jalankan: async () => {},
+    });
+
+    const perintahMenu = buatPerintahMenu(registri);
+    const konteks = buatKonteksTiruan({
+      namaPerintah: "menu",
+      adalahGrup: true,
+      adalahAdmin: true,
+      adalahPemilik: false,
+    });
+
+    await perintahMenu.jalankan(konteks);
+
+    const pesanBalasan = (konteks.balas as any).mock.calls[0][0];
+    expect(pesanBalasan).toContain("!tagall / !all");
+    expect(pesanBalasan).toContain("Alat Grup");
   });
 
   it("perintah help harus menampilkan detail informasi perintah", async () => {

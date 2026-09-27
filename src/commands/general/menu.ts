@@ -1,42 +1,53 @@
-import type { PerintahBot, RegistriPerintah } from "../../core/command-registry.js";
+import type { PerintahBot, RegistriPerintah, KategoriPerintah } from "../../core/command-registry.js";
 import type { KonteksPerintah } from "../../core/message-context.js";
+import { periksaIzinPerintah } from "../../core/permissions.js";
 import { konfigurasiEnv } from "../../config/env.js";
 
 /**
- * Membuat perintah menu yang terikat dengan registri perintah aktif.
+ * Membuat perintah menu kontekstual yang ringkas dan hanya menampilkan
+ * perintah yang berhak diakses oleh pengguna terkait.
  */
 export function buatPerintahMenu(registri: RegistriPerintah): PerintahBot {
   return {
     nama: "menu",
-    alias: ["help", "bantuan"],
-    deskripsi: "Menampilkan daftar seluruh perintah yang tersedia",
+    alias: ["bantuan"],
+    deskripsi: "Menampilkan daftar perintah yang dapat Anda gunakan",
     kategori: "general",
     jalankan: async (konteks: KonteksPerintah) => {
-      const kelompokKategori = registri.ambilBerdasarkanKategori();
       const awalan = konfigurasiEnv.awalanPerintah;
+      const semuaPerintah = registri.ambilSemua();
 
-      const judulKategori: Record<string, string> = {
-        general: "Umum",
-        sticker: "Stiker & Media",
-        group: "Alat Grup",
-        moderation: "Moderasi",
-        admin: "Admin Bot",
-        downloader: "Pengunduh Media",
-      };
+      // Filter hanya perintah yang diizinkan untuk pengguna & konteks saat ini
+      const perintahTersedia = semuaPerintah.filter(
+        (perintah) => periksaIzinPerintah(perintah, konteks).diizinkan
+      );
 
-      let teksMenu = `Halo @${konteks.idPengguna.split("@")[0]}!\n`;
-      teksMenu += `Berikut daftar perintah Anya Bot:\n\n`;
+      // Urutan kategori yang logis dan rapi
+      const urutanKategori: { kunci: KategoriPerintah; label: string }[] = [
+        { kunci: "sticker", label: "Stiker & Media" },
+        { kunci: "downloader", label: "Pengunduh" },
+        { kunci: "group", label: "Alat Grup" },
+        { kunci: "moderation", label: "Moderasi Grup" },
+        { kunci: "general", label: "Umum" },
+        { kunci: "admin", label: "Khusus Admin Bot" },
+      ];
 
-      for (const [kategori, daftarPerintah] of kelompokKategori.entries()) {
-        const judul = judulKategori[kategori] ?? kategori.toUpperCase();
-        teksMenu += `*──「 ${judul} 」──*\n`;
-        for (const perintah of daftarPerintah) {
-          teksMenu += `• ${awalan}${perintah.nama} — ${perintah.deskripsi}\n`;
+      let teksMenu = `*Anya Bot*\n`;
+      teksMenu += `Awalan: \`${awalan}\`\n\n`;
+
+      for (const kategori of urutanKategori) {
+        const daftar = perintahTersedia.filter((p) => p.kategori === kategori.kunci);
+        if (daftar.length === 0) continue;
+
+        teksMenu += `*${kategori.label}*\n`;
+        for (const p of daftar) {
+          const aliasTeks = p.alias.length > 0 ? ` / ${awalan}${p.alias[0]}` : "";
+          teksMenu += `› ${awalan}${p.nama}${aliasTeks}\n`;
         }
         teksMenu += `\n`;
       }
 
-      teksMenu += `Gunakan ${awalan}help <nama_perintah> untuk melihat detail bantuan.`;
+      teksMenu += `Ketik \`${awalan}help <nama_perintah>\` untuk petunjuk detail.`;
 
       await konteks.balas(teksMenu.trim());
     },
