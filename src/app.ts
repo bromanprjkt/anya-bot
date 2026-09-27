@@ -73,7 +73,7 @@ export class AplikasiAnya {
     this.perutePerintah = new PerutePerintah(this.registriPerintah, this.konfigurasi);
 
     this.layananPengunduh = new LayananPengunduh();
-    this.layananPengunduh.daftarkanPenyedia(new PenyediaScrapingAnya(this.konfigurasi));
+    this.layananPengunduh.daftarkanPenyedia(new PenyediaScrapingAnya());
     this.layananPengunduh.daftarkanPenyedia(new PenyediaApiEksternal(this.konfigurasi));
 
     this.daftarkanSemuaPerintah();

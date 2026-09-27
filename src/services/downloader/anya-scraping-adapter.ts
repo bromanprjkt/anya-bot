@@ -1,19 +1,17 @@
 import path from "node:path";
-import axios from "axios";
 import { buatPencatat } from "../../utils/logger.js";
-import type { KonfigurasiEnv } from "../../config/env.js";
 import type { HasilUnduhan, PenyediaPengunduh } from "./downloader-adapter.js";
 
 const pencatat = buatPencatat("PenyediaScrapingAnya");
 
 /**
  * Penyedia pengunduh yang mengintegrasikan scraper lokal Anya (TikTok & Instagram).
- * Mendukung pemanggilan via REST API server lokal maupun eksekusi modul scraper langsung.
+ * Menjalankan modul scraper langsung tanpa perantara server HTTP.
  */
 export class PenyediaScrapingAnya implements PenyediaPengunduh {
   public readonly nama = "PenyediaScrapingAnya";
 
-  constructor(private readonly konfigurasi: KonfigurasiEnv) {}
+  constructor() {}
 
   public cocokUrl(tautan: string): boolean {
     const tautanKecil = tautan.toLowerCase();
@@ -45,52 +43,6 @@ export class PenyediaScrapingAnya implements PenyediaPengunduh {
    * Mengunduh media TikTok (video tanpa watermark atau slide foto).
    */
   private async unduhTikTok(tautan: string): Promise<HasilUnduhan> {
-    const urlApi = this.konfigurasi.urlApiPengunduh;
-    const kunciApi = this.konfigurasi.kunciApiPengunduh;
-
-    // Opsi 1: Panggil via server API jika dikonfigurasi
-    if (urlApi) {
-      try {
-        const urlEndpoint = `${urlApi.replace(/\/$/, "")}/api/tiktok/download?url=${encodeURIComponent(tautan)}`;
-        pencatat.info({ urlEndpoint }, "Mengakses API server untuk unduhan TikTok");
-
-        const tajuk: Record<string, string> = {};
-        if (kunciApi) {
-          tajuk["x-api-key"] = kunciApi;
-        }
-
-        const respon = await axios.get(urlEndpoint, {
-          headers: tajuk,
-          timeout: 25000,
-        });
-
-        const dataRespon = respon.data;
-        if (dataRespon && dataRespon.success) {
-          const daftarMedia = dataRespon.data as { type: string; url: string }[] | undefined;
-          const itemVideo =
-            daftarMedia?.find((item) => item.type === "nowatermark_hd") ??
-            daftarMedia?.find((item) => item.type === "nowatermark") ??
-            daftarMedia?.[0];
-
-          if (itemVideo?.url) {
-            const adalahFoto = itemVideo.type === "photo";
-            return {
-              berhasil: true,
-              urlMedia: itemVideo.url,
-              tipeMime: adalahFoto ? "image/jpeg" : "video/mp4",
-              judul: dataRespon.title,
-            };
-          }
-        }
-      } catch (kesalahanApi) {
-        pencatat.warn(
-          { kesalahan: kesalahanApi instanceof Error ? kesalahanApi.message : kesalahanApi },
-          "Gagal memanggil API server pengunduh, mencoba fallback modul scraper langsung"
-        );
-      }
-    }
-
-    // Opsi 2: Fallback langsung ke modul scraper.js pada folder anya-scraping
     try {
       const jalurModulScraper = path.resolve(process.cwd(), "anya-scraping", "scraper.js");
       const { tiktokDownloaderVideo } = await import(jalurModulScraper);
@@ -131,49 +83,6 @@ export class PenyediaScrapingAnya implements PenyediaPengunduh {
    * Mengunduh media Instagram (video Reels atau postingan foto).
    */
   private async unduhInstagram(tautan: string): Promise<HasilUnduhan> {
-    const urlApi = this.konfigurasi.urlApiPengunduh;
-    const kunciApi = this.konfigurasi.kunciApiPengunduh;
-
-    // Opsi 1: Panggil via server API jika dikonfigurasi
-    if (urlApi) {
-      try {
-        const urlEndpoint = `${urlApi.replace(/\/$/, "")}/api/instagram/download?url=${encodeURIComponent(tautan)}`;
-        pencatat.info({ urlEndpoint }, "Mengakses API server untuk unduhan Instagram");
-
-        const tajuk: Record<string, string> = {};
-        if (kunciApi) {
-          tajuk["x-api-key"] = kunciApi;
-        }
-
-        const respon = await axios.get(urlEndpoint, {
-          headers: tajuk,
-          timeout: 25000,
-        });
-
-        const dataRespon = respon.data;
-        if (dataRespon && dataRespon.success) {
-          const daftarUrl = dataRespon.url;
-          const urlMedia = Array.isArray(daftarUrl) ? daftarUrl[0] : daftarUrl;
-
-          if (urlMedia) {
-            const adalahVideo = Boolean(dataRespon.metadata?.isVideo ?? true);
-            return {
-              berhasil: true,
-              urlMedia,
-              tipeMime: adalahVideo ? "video/mp4" : "image/jpeg",
-              judul: dataRespon.metadata?.caption,
-            };
-          }
-        }
-      } catch (kesalahanApi) {
-        pencatat.warn(
-          { kesalahan: kesalahanApi instanceof Error ? kesalahanApi.message : kesalahanApi },
-          "Gagal memanggil API server pengunduh, mencoba fallback modul scraper langsung"
-        );
-      }
-    }
-
-    // Opsi 2: Fallback langsung ke modul scraper.js pada folder anya-scraping
     try {
       const jalurModulScraper = path.resolve(process.cwd(), "anya-scraping", "scraper.js");
       const { Instagram } = await import(jalurModulScraper);

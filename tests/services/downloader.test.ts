@@ -76,7 +76,7 @@ describe("Layanan Pengunduh & Perintah Media", () => {
     const { PenyediaScrapingAnya } = await import(
       "../../src/services/downloader/anya-scraping-adapter.js"
     );
-    const penyedia = new PenyediaScrapingAnya(konfigurasiTiruan);
+    const penyedia = new PenyediaScrapingAnya();
 
     expect(penyedia.cocokUrl("https://www.tiktok.com/@user/video/123")).toBe(true);
     expect(penyedia.cocokUrl("https://www.instagram.com/reel/123/")).toBe(true);
