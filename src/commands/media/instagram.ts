@@ -2,9 +2,6 @@ import type { PerintahBot } from "../../core/command-registry.js";
 import type { KonteksPerintah } from "../../core/message-context.js";
 import type { LayananPengunduh } from "../../services/downloader/downloader-adapter.js";
 
-/**
- * Membuat perintah Instagram downloader yang terhubung ke layanan pengunduh.
- */
 export function buatPerintahInstagram(layanan: LayananPengunduh): PerintahBot {
   return {
     nama: "instagram",

@@ -45,7 +45,6 @@ export async function unduhMediaPesan(
   const isiPesan = pesan.message;
   if (!isiPesan) return null;
 
-  // Periksa apakah pesan saat ini berisi media
   const memilikiMediaLangsung = Boolean(
     isiPesan.imageMessage ||
     isiPesan.videoMessage ||
@@ -67,7 +66,6 @@ export async function unduhMediaPesan(
       return buffer as Buffer;
     }
 
-    // Periksa pesan kutipan jika pesan langsung bukan media
     const pesanKutipan = isiPesan.extendedTextMessage?.contextInfo?.quotedMessage;
     if (pesanKutipan) {
       const memilikiMediaKutipan = Boolean(

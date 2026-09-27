@@ -24,9 +24,6 @@ export class AntreanPekerjaanMedia {
       batasKonkurensi ?? konfigurasiEnv.batasPekerjaanMediaBersamaan;
   }
 
-  /**
-   * Memasukkan pekerjaan ke dalam antrean eksekusi teratur.
-   */
   public antrekanPekerjaan<T>(
     namaPekerjaan: string,
     fungsiEksekusi: () => Promise<T>
@@ -104,9 +101,6 @@ export class AntreanPekerjaanMedia {
       });
   }
 
-  /**
-   * Mengambil statistik status antrean saat ini.
-   */
   public ambilStatistikAntrean(): {
     sedangBerjalan: number;
     antreanTersisa: number;

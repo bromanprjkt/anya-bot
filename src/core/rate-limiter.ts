@@ -11,13 +11,6 @@ export interface HasilBatasFrekuensi {
 export class PembatasFrekuensi {
   private readonly petaCatatan = new Map<string, CatatanFrekuensi>();
 
-  /**
-   * Memeriksa apakah permintaan dengan kunci tertentu melebihi batas frekuensi yang diizinkan.
-   *
-   * @param kunci Identifier unik (misal: "user:123" atau "group:456")
-   * @param batasMaksimal Jumlah aksi maksimal dalam satu jendela waktu
-   * @param jendelaMilidetik Rentang jendela waktu dalam milidetik (misal: 10000 ms)
-   */
   public periksaBatas(
     kunci: string,
     batasMaksimal: number = 5,
@@ -56,9 +49,6 @@ export class PembatasFrekuensi {
     };
   }
 
-  /**
-   * Menghapus catatan untuk kunci tertentu atau seluruhnya.
-   */
   public reset(kunci?: string): void {
     if (kunci) {
       this.petaCatatan.delete(kunci);

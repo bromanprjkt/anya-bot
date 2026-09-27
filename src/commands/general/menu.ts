@@ -62,7 +62,6 @@ export function buatPerintahMenu(registri: RegistriPerintah): PerintahBot {
         (perintah) => periksaIzinPerintah(perintah, konteks).diizinkan
       );
 
-      // Urutan kategori yang logis dan rapi
       const urutanKategori: { kunci: KategoriPerintah; label: string }[] = [
         { kunci: "sticker", label: "Stiker & Media" },
         { kunci: "downloader", label: "Pengunduh" },

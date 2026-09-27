@@ -6,9 +6,6 @@ export interface HasilPemeriksaanIzin {
   alasanPenolakan?: string;
 }
 
-/**
- * Memeriksa hak akses pengguna terhadap perintah yang diminta.
- */
 export function periksaIzinPerintah(
   perintah: PerintahBot,
   konteks: KonteksPerintah

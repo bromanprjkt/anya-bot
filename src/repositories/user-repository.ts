@@ -34,9 +34,6 @@ export class RepositoriPengguna {
     };
   }
 
-  /**
-   * Mengambil data pengguna atau membuat baru jika belum ada.
-   */
   public catatPengguna(idPengguna: string, namaPengguna: string): EntitasPengguna {
     const ambilStmt = this.db.prepare("SELECT * FROM users WHERE id_pengguna = ?");
     const ada = ambilStmt.get(idPengguna) as BarisPenggunaDb | undefined;
@@ -62,9 +59,6 @@ export class RepositoriPengguna {
     };
   }
 
-  /**
-   * Menambah penghitung pesan terkirim pengguna.
-   */
   public tambahPesanPengguna(idPengguna: string, namaPengguna: string): void {
     const sekarang = new Date().toISOString();
     this.catatPengguna(idPengguna, namaPengguna);

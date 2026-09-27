@@ -11,7 +11,6 @@ export const perintahQC: PerintahBot = {
     let teksKutipan = konteks.teksArgumen;
     let namaKutipan = konteks.namaPengirim;
 
-    // Jika pengguna mereply pesan teks
     const kutipan = konteks.pesanMentah.message?.extendedTextMessage?.contextInfo?.quotedMessage;
     if (!teksKutipan && kutipan) {
       teksKutipan =

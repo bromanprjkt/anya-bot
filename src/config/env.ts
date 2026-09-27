@@ -2,7 +2,6 @@ import dotenv from "dotenv";
 import { z } from "zod";
 import { KONFIGURASI_BAWAAN } from "./defaults.js";
 
-// Muat variabel lingkungan dari berkas .env
 dotenv.config();
 
 const skemaEnv = z.object({

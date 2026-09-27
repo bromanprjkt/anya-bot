@@ -2,9 +2,6 @@ import type { PerintahBot, RegistriPerintah } from "../../core/command-registry.
 import type { KonteksPerintah } from "../../core/message-context.js";
 import { konfigurasiEnv } from "../../config/env.js";
 
-/**
- * Membuat perintah bantuan terperinci per perintah.
- */
 export function buatPerintahHelp(registri: RegistriPerintah): PerintahBot {
   return {
     nama: "help",

@@ -13,12 +13,6 @@ export interface HasilPenangananKoneksi {
   pesanKesalahan?: string;
 }
 
-/**
- * Menangani pembaruan status koneksi WhatsApp Baileys.
- *
- * @param pembaruan Objek ConnectionState dari Baileys
- * @returns Evaluasi tindakan koneksi ulang
- */
 export function tanganiPembaruanKoneksi(
   pembaruan: Partial<ConnectionState>
 ): HasilPenangananKoneksi {

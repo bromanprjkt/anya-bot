@@ -8,9 +8,6 @@ const pencatat = buatPencatat("BasisData");
 
 let instanceBasisData: Database.Database | null = null;
 
-/**
- * Menginisialisasi skema tabel basis data SQLite jika belum dibuat.
- */
 function inisialisasiSkema(db: Database.Database): void {
   pencatat.info("Menyiapkan skema tabel basis data SQLite...");
 
@@ -52,9 +49,6 @@ function inisialisasiSkema(db: Database.Database): void {
   pencatat.info("Skema basis data SQLite berhasil disiapkan");
 }
 
-/**
- * Mendapatkan atau membuat instance koneksi basis data SQLite.
- */
 export function ambilBasisData(jalurKustom?: string): Database.Database {
   if (instanceBasisData && !jalurKustom) {
     return instanceBasisData;

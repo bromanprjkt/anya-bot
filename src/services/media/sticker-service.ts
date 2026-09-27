@@ -108,9 +108,6 @@ function sisipkanExifKeWebp(
 }
 
 export class LayananStiker {
-  /**
-   * Mengonversi buffer gambar (JPEG, PNG, dsb.) menjadi stiker WebP 512x512.
-   */
   public async gambarKeStiker(
     bufferGambar: Buffer,
     metadata?: MetadataStiker
@@ -129,9 +126,6 @@ export class LayananStiker {
     return sisipkanExifKeWebp(webpBuffer, exif);
   }
 
-  /**
-   * Mengonversi buffer video atau GIF pendek menjadi stiker animasi WebP.
-   */
   public async videoKeStikerAnimasi(
     bufferVideo: Buffer,
     metadata?: MetadataStiker
@@ -177,9 +171,6 @@ export class LayananStiker {
     );
   }
 
-  /**
-   * Mengonversi stiker WebP kembali menjadi gambar format PNG.
-   */
   public async stikerKeGambar(bufferStiker: Buffer): Promise<Buffer> {
     pencatat.debug("Mengonversi stiker ke gambar PNG");
     return await sharp(bufferStiker).png().toBuffer();

@@ -43,9 +43,6 @@ export class RepositoriGrup {
     };
   }
 
-  /**
-   * Mengambil data grup dari database atau membuatnya jika belum terdaftar.
-   */
   public ambilAtauBuatGrup(idGrup: string, namaGrup: string): EntitasGrup {
     const ambilStmt = this.db.prepare(
       "SELECT * FROM groups WHERE id_grup = ?"
@@ -76,9 +73,6 @@ export class RepositoriGrup {
     };
   }
 
-  /**
-   * Memperbarui konfigurasi saklar fitur grup.
-   */
   public perbaruiPengaturan(
     idGrup: string,
     pengaturan: Partial<

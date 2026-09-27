@@ -4,23 +4,14 @@ import { konfigurasiEnv } from "../../config/env.js";
 
 let statusBacaOtomatis: boolean = konfigurasiEnv.bacaPesanOtomatis;
 
-/**
- * Memeriksa apakah fitur auto read (baca pesan otomatis) sedang aktif.
- */
 export function apakahBacaOtomatisAktif(): boolean {
   return statusBacaOtomatis;
 }
 
-/**
- * Mengubah status aktif fitur auto read.
- */
 export function aturStatusBacaOtomatis(status: boolean): void {
   statusBacaOtomatis = status;
 }
 
-/**
- * Perintah admin untuk mengaktifkan atau menonaktifkan fitur baca pesan otomatis.
- */
 export const perintahAutoRead: PerintahBot = {
   nama: "autoread",
   alias: ["bacaotomatis", "read"],

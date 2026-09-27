@@ -37,9 +37,6 @@ export class RepositoriPeringatan {
     };
   }
 
-  /**
-   * Menambahkan catatan peringatan untuk anggota grup.
-   */
   public tambahPeringatan(
     idGrup: string,
     idPengguna: string,
@@ -64,9 +61,6 @@ export class RepositoriPeringatan {
     };
   }
 
-  /**
-   * Mengambil riwayat peringatan yang pernah diterima pengguna dalam grup tertentu.
-   */
   public ambilDaftarPeringatan(
     idGrup: string,
     idPengguna: string
@@ -81,9 +75,6 @@ export class RepositoriPeringatan {
     return daftar.map((b) => this.petakan(b));
   }
 
-  /**
-   * Menghitung jumlah total peringatan pengguna dalam grup.
-   */
   public hitungTotalPeringatan(idGrup: string, idPengguna: string): number {
     const stmt = this.db.prepare(`
       SELECT COUNT(*) as total FROM warnings
@@ -94,9 +85,6 @@ export class RepositoriPeringatan {
     return hasil.total;
   }
 
-  /**
-   * Menghapus semua peringatan untuk pengguna dalam grup terkait.
-   */
   public resetPeringatan(idGrup: string, idPengguna: string): number {
     const stmt = this.db.prepare(`
       DELETE FROM warnings

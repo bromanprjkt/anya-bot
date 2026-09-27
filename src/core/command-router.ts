@@ -14,9 +14,6 @@ export class PerutePerintah {
     private readonly konfigurasi: KonfigurasiEnv
   ) {}
 
-  /**
-   * Mengekstrak konten teks dari berbagai jenis pesan Baileys.
-   */
   public ekstrakTeksPesan(pesan: WAMessage): string {
     const isi = pesan.message;
     if (!isi) return "";
@@ -31,9 +28,6 @@ export class PerutePerintah {
     ).trim();
   }
 
-  /**
-   * Memproses pesan masuk dari WhatsApp dan mengarahkan ke perintah yang sesuai.
-   */
   public async prosesPesan(soket: WASocket, pesan: WAMessage): Promise<void> {
     const teks = this.ekstrakTeksPesan(pesan);
     if (!teks) return;

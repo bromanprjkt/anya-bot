@@ -12,11 +12,6 @@ export interface HasilManajerSesi {
   jalurSesi: string;
 }
 
-/**
- * Menginisialisasi penyimpanan sesi multi-file untuk Baileys.
- *
- * @param direktoriSesi Direktori penyimpanan kredensial sesi
- */
 export async function inisialisasiSesiWhatsApp(
   direktoriSesi: string
 ): Promise<HasilManajerSesi> {

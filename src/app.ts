@@ -5,20 +5,16 @@ import { KonfigurasiEnv, konfigurasiEnv } from "./config/env.js";
 import { buatPencatat } from "./utils/logger.js";
 import type pino from "pino";
 
-// Core
 import { RegistriPerintah } from "./core/command-registry.js";
 import { PerutePerintah } from "./core/command-router.js";
 import { pembatasFrekuensi } from "./core/rate-limiter.js";
 
-// WhatsApp
 import { KlienWhatsApp } from "./whatsapp/client.js";
 
-// Repositori
 import { ambilBasisData } from "./repositories/database.js";
 import { repositoriGrup } from "./repositories/group-repository.js";
 import { repositoriPengguna } from "./repositories/user-repository.js";
 
-// Layanan
 import { layananAntiTautan } from "./services/moderation/antilink-service.js";
 import { layananPenyimpananSementara } from "./services/storage/temp-storage.js";
 import {
@@ -28,7 +24,6 @@ import {
   PenyediaApiEksternal,
 } from "./services/downloader/downloader-adapter.js";
 
-// Perintah
 import { perintahPing } from "./commands/general/ping.js";
 import { perintahOwner } from "./commands/general/owner.js";
 import { buatPerintahMenu } from "./commands/general/menu.js";
@@ -85,36 +80,30 @@ export class AplikasiAnya {
    * Mendaftarkan seluruh perintah bot ke registri perintah pusat.
    */
   private daftarkanSemuaPerintah(): void {
-    // Kategori: General
     this.registriPerintah.daftarkan(perintahPing);
     this.registriPerintah.daftarkan(perintahOwner);
     this.registriPerintah.daftarkan(buatPerintahMenu(this.registriPerintah));
     this.registriPerintah.daftarkan(buatPerintahHelp(this.registriPerintah));
 
-    // Kategori: Sticker & Media
     this.registriPerintah.daftarkan(perintahSticker);
     this.registriPerintah.daftarkan(perintahToImg);
     this.registriPerintah.daftarkan(perintahTake);
     this.registriPerintah.daftarkan(perintahQC);
 
-    // Kategori: Downloader
     this.registriPerintah.daftarkan(buatPerintahTikTok(this.layananPengunduh));
     this.registriPerintah.daftarkan(buatPerintahInstagram(this.layananPengunduh));
 
-    // Kategori: Group
     this.registriPerintah.daftarkan(perintahTagAll);
     this.registriPerintah.daftarkan(perintahGroupInfo);
     this.registriPerintah.daftarkan(perintahAdmins);
     this.registriPerintah.daftarkan(perintahWelcome);
     this.registriPerintah.daftarkan(perintahGoodbye);
 
-    // Kategori: Moderation
     this.registriPerintah.daftarkan(perintahAntiLink);
     this.registriPerintah.daftarkan(perintahAntiSpam);
     this.registriPerintah.daftarkan(perintahWarn);
     this.registriPerintah.daftarkan(perintahWarnings);
 
-    // Kategori: Admin
     this.registriPerintah.daftarkan(perintahBotStats);
     this.registriPerintah.daftarkan(perintahMaintenance);
     this.registriPerintah.daftarkan(perintahAutoRead);
@@ -159,12 +148,10 @@ export class AplikasiAnya {
       }
     }
 
-    // Catat statistik pesan pengguna
     repositoriPengguna.tambahPesanPengguna(idPengirim, namaPengirim);
 
     const teksPesan = this.perutePerintah.ekstrakTeksPesan(pesan);
 
-    // Proteksi Moderasi Anti-Link jika aktif di grup
     if (adalahGrup && repositoriGrup.apakahAntilinkAktif(idObrolan)) {
       if (layananAntiTautan.apakahTautanTerlarang(teksPesan)) {
         this.pencatat.warn(
@@ -184,16 +171,14 @@ export class AplikasiAnya {
       }
     }
 
-    // Proteksi Moderasi Anti-Spam
     if (adalahGrup && repositoriGrup.apakahAntispamAktif(idObrolan)) {
       const hasilBatas = pembatasFrekuensi.periksaBatas(`spam:${idPengirim}`, 5, 5000);
       if (!hasilBatas.diizinkan) {
         this.pencatat.warn({ idPengirim }, "Pesan pengguna melampaui batas frekuensi Anti-Spam");
-        return; // Abaikan pesan spam
+        return;
       }
     }
 
-    // Periksa apakah bot dalam mode pemeliharaan
     if (apakahModePemeliharaan()) {
       const nomorPemilik = this.konfigurasi.idPemilikBot.replace(/[^0-9]/g, "");
       const nomorPengirim = idPengirim.replace(/[^0-9]/g, "");
@@ -209,7 +194,6 @@ export class AplikasiAnya {
       }
     }
 
-    // Rute pesan ke perintah
     await this.perutePerintah.prosesPesan(soket, pesan);
   }
 

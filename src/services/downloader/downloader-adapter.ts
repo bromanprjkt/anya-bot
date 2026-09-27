@@ -154,9 +154,6 @@ export class LayananPengunduh {
     pencatat.debug({ penyedia: penyedia.nama }, "Penyedia pengunduh berhasil didaftarkan");
   }
 
-  /**
-   * Menemukan penyedia yang cocok dan mengunduh media.
-   */
   public async unduhMedia(tautan: string): Promise<HasilUnduhan> {
     const penyediaCocok = this.daftarPenyedia.find((p) => p.cocokUrl(tautan));
 

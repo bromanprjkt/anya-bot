@@ -27,9 +27,6 @@ export class RegistriPerintah {
   private readonly daftarPerintah = new Map<string, PerintahBot>();
   private readonly petaAlias = new Map<string, string>();
 
-  /**
-   * Mendaftarkan perintah baru ke dalam registri.
-   */
   public daftarkan(perintah: PerintahBot): void {
     const namaNormal = perintah.nama.toLowerCase();
 
@@ -47,9 +44,6 @@ export class RegistriPerintah {
     pencatat.debug({ nama: namaNormal, alias: perintah.alias }, "Perintah berhasil didaftarkan");
   }
 
-  /**
-   * Mencari perintah berdasarkan nama atau alias.
-   */
   public cariPerintah(namaAtauAlias: string): PerintahBot | undefined {
     const kunciNormal = namaAtauAlias.toLowerCase();
 
@@ -65,16 +59,10 @@ export class RegistriPerintah {
     return undefined;
   }
 
-  /**
-   * Mengambil semua perintah yang terdaftar.
-   */
   public ambilSemua(): PerintahBot[] {
     return Array.from(this.daftarPerintah.values());
   }
 
-  /**
-   * Mengambil daftar perintah yang dikelompokkan berdasarkan kategori.
-   */
   public ambilBerdasarkanKategori(): Map<KategoriPerintah, PerintahBot[]> {
     const hasil = new Map<KategoriPerintah, PerintahBot[]>();
 

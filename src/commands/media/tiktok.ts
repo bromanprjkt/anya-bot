@@ -2,9 +2,6 @@ import type { PerintahBot } from "../../core/command-registry.js";
 import type { KonteksPerintah } from "../../core/message-context.js";
 import type { LayananPengunduh } from "../../services/downloader/downloader-adapter.js";
 
-/**
- * Membuat perintah TikTok downloader yang terhubung ke layanan pengunduh.
- */
 export function buatPerintahTikTok(layanan: LayananPengunduh): PerintahBot {
   return {
     nama: "tiktok",

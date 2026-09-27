@@ -22,9 +22,6 @@ export interface PendengarAcaraGrup {
   ) => Promise<void>;
 }
 
-/**
- * Mendaftarkan pendengar acara (event listener) standar ke Baileys socket.
- */
 export function daftarkanAcaraWhatsApp(
   soket: WASocket,
   penghematKredensial: () => Promise<void>,

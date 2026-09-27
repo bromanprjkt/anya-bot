@@ -28,9 +28,6 @@ export class KlienWhatsApp {
     private readonly pendengarGrup?: PendengarAcaraGrup
   ) {}
 
-  /**
-   * Menginisialisasi soket Baileys dan menghubungkan ke jaringan WhatsApp.
-   */
   public async hubungkan(): Promise<void> {
     if (this.sedangMenghubungkan) {
       this.pencatat.warn("Proses koneksi WhatsApp sedang berjalan...");
@@ -96,9 +93,6 @@ export class KlienWhatsApp {
     }
   }
 
-  /**
-   * Menjadwalkan percobaan koneksi ulang jika terjadi diskoneksi.
-   */
   private jadwalkanKoneksiUlang(): void {
     if (this.penundaKoneksiUlang) {
       clearTimeout(this.penundaKoneksiUlang);
@@ -114,9 +108,6 @@ export class KlienWhatsApp {
     }, this.jedaKoneksiUlangMilidetik);
   }
 
-  /**
-   * Memutuskan koneksi soket secara aman.
-   */
   public async putuskan(): Promise<void> {
     if (this.penundaKoneksiUlang) {
       clearTimeout(this.penundaKoneksiUlang);
@@ -134,9 +125,6 @@ export class KlienWhatsApp {
     }
   }
 
-  /**
-   * Mengambil instance soket aktif saat ini.
-   */
   public ambilSoket(): WASocket | null {
     return this.soket;
   }

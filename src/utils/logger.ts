@@ -3,12 +3,6 @@ import { konfigurasiEnv } from "../config/env.js";
 
 const apakahPengembangan = konfigurasiEnv.lingkungan === "development";
 
-/**
- * Membuat instance pencatat (logger) Pino terkonfigurasi.
- *
- * @param namaKomponen Nama modul atau komponen yang menggunakan pencatat
- * @returns Instance Pino Logger
- */
 export function buatPencatat(namaKomponen?: string): pino.Logger {
   const tingkatLog = konfigurasiEnv.tingkatLog;
 
