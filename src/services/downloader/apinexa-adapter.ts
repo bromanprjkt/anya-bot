@@ -118,7 +118,8 @@ export class PenyediaApinexa implements PenyediaPengunduh {
         pesanKesalahan: "Gagal menemukan tautan unduhan video dari TikTok.",
       };
     } catch (kesalahan) {
-      pencatat.error({ kesalahan }, "Kesalahan eksekusi scraper TikTok Apinexa");
+      const pesanError = kesalahan instanceof Error ? kesalahan.message : String(kesalahan);
+      pencatat.error({ kesalahan: pesanError }, "Kesalahan eksekusi scraper TikTok Apinexa");
       return {
         berhasil: false,
         pesanKesalahan: "Gagal memproses video TikTok. Pastikan akun atau video tidak diprivat.",
@@ -199,7 +200,8 @@ export class PenyediaApinexa implements PenyediaPengunduh {
         pesanKesalahan: hasilScraping?.msg ?? "Gagal mendapatkan media Instagram.",
       };
     } catch (kesalahan) {
-      pencatat.error({ kesalahan }, "Kesalahan eksekusi scraper Instagram Apinexa");
+      const pesanError = kesalahan instanceof Error ? kesalahan.message : String(kesalahan);
+      pencatat.error({ kesalahan: pesanError }, "Kesalahan eksekusi scraper Instagram Apinexa");
       return {
         berhasil: false,
         pesanKesalahan: "Gagal memproses media Instagram. Pastikan akun tidak diprivat.",

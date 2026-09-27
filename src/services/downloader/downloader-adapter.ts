@@ -149,6 +149,11 @@ export class LayananPengunduh {
     if (urlMedia.includes("tikwm.com")) {
       tajuk["Referer"] = "https://www.tikwm.com/";
     } else if (
+      urlMedia.includes("tikcdn.io") ||
+      urlMedia.includes("ssstik.io")
+    ) {
+      tajuk["Referer"] = "https://ssstik.io/";
+    } else if (
       urlMedia.includes("instagram.com") ||
       urlMedia.includes("cdninstagram.com")
     ) {

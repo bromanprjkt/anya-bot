@@ -22,84 +22,162 @@ export async function tiktokSearchVideo(query) {
   return res.data.data;
 }
 
-export async function tiktokDownloaderVideo(url) {
-  try {
-    let data = [];
-    function formatNumber(integer) {
-      return Number(parseInt(integer)).toLocaleString().replace(/,/g, ".");
-    }
-    function formatDate(n, locale = "id") {
-      let d = new Date(n);
-      return d.toLocaleDateString(locale, {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-        hour: "numeric",
-        minute: "numeric",
-        second: "numeric",
-      });
-    }
+async function tiktokTikwmDownloader(url) {
+  let data = [];
+  function formatNumber(integer) {
+    return Number(parseInt(integer)).toLocaleString().replace(/,/g, ".");
+  }
+  function formatDate(n, locale = "id") {
+    let d = new Date(n);
+    return d.toLocaleDateString(locale, {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+      hour: "numeric",
+      minute: "numeric",
+      second: "numeric",
+    });
+  }
 
-    const domain = "https://www.tikwm.com/api/";
-    const { data: result } = await axios.post(
-      domain,
-      {},
-      {
-        headers: {
-          "Accept": "application/json, text/javascript, */*; q=0.01",
-          "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-          "Origin": "https://www.tikwm.com",
-          "Referer": "https://www.tikwm.com/",
-          "User-Agent":
-            "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Mobile Safari/537.36",
-        },
-        params: { url, count: 12, cursor: 0, web: 1, hd: 1 },
-      }
+  const domain = "https://www.tikwm.com/api/";
+  const { data: result } = await axios.post(
+    domain,
+    {},
+    {
+      headers: {
+        "Accept": "application/json, text/javascript, */*; q=0.01",
+        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+        "Origin": "https://www.tikwm.com",
+        "Referer": "https://www.tikwm.com/",
+        "User-Agent":
+          "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Mobile Safari/537.36",
+      },
+      params: { url, count: 12, cursor: 0, web: 1, hd: 1 },
+    }
+  );
+
+  const res = result.data;
+  if (!res) throw new Error("Gagal ambil data dari TikWM.");
+
+  if (!res.size) {
+    res.images.map((v) => data.push({ type: "photo", url: v }));
+  } else {
+    data.push(
+      { type: "watermark", url: "https://www.tikwm.com" + res.wmplay },
+      { type: "nowatermark", url: "https://www.tikwm.com" + res.play },
+      { type: "nowatermark_hd", url: "https://www.tikwm.com" + res.hdplay }
     );
 
-    const res = result.data;
-    if (!res) throw new Error("Gagal ambil data dari TikWM.");
-
-    if (!res.size) {
-      res.images.map((v) => data.push({ type: "photo", url: v }));
-    } else {
-      data.push(
-        { type: "watermark", url: "https://www.tikwm.com" + res.wmplay },
-        { type: "nowatermark", url: "https://www.tikwm.com" + res.play },
-        { type: "nowatermark_hd", url: "https://www.tikwm.com" + res.hdplay }
-      );
-      
-      // --- PERBAIKAN: Tambahkan URL Musik ke array data ---
-      if (res.music) {
-          data.push({ type: "music", url: "https://www.tikwm.com" + res.music });
-      }
+    if (res.music) {
+      data.push({ type: "music", url: "https://www.tikwm.com" + res.music });
     }
+  }
 
-    return {
-      status: true,
-      title: res.title,
-      // --- PERBAIKAN: Kalikan create_time dengan 1000 ---
-      taken_at: formatDate(res.create_time * 1000).replace("1970", ""),
-      region: res.region,
-      id: res.id,
-      duration: res.duration + " Seconds",
-      cover: "https://www.tikwm.com" + res.cover,
-      data,
-      author: {
-        id: res.author.id,
-        nickname: res.author.nickname,
-        avatar: "https://www.tikwm.com" + res.author.avatar,
+  return {
+    status: true,
+    title: res.title,
+    taken_at: formatDate(res.create_time * 1000).replace("1970", ""),
+    region: res.region,
+    id: res.id,
+    duration: res.duration + " Seconds",
+    cover: "https://www.tikwm.com" + res.cover,
+    data,
+    author: {
+      id: res.author?.id,
+      nickname: res.author?.nickname,
+      avatar: res.author?.avatar ? "https://www.tikwm.com" + res.author.avatar : undefined,
+    },
+    stats: {
+      views: formatNumber(res.play_count),
+      likes: formatNumber(res.digg_count),
+      comment: formatNumber(res.comment_count),
+      share: formatNumber(res.share_count),
+    },
+  };
+}
+
+async function tiktokSsstikDownloader(url) {
+  const resHome = await axios.get("https://ssstik.io/en", {
+    headers: {
+      "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    },
+  });
+  const $ = cheerio.load(resHome.data);
+  const form = $("#submit-form");
+  const hxPost = form.attr("hx-post") || "/abc?url=dl";
+  const match = resHome.data.match(/s_tt\s*=\s*['"]([^'"]+)['"]/);
+  const tt = match ? match[1] : "";
+  const cookies =
+    resHome.headers["set-cookie"]?.map((c) => c.split(";")[0]).join("; ") || "";
+
+  const resPost = await axios.post(
+    `https://ssstik.io${hxPost}`,
+    qs.stringify({
+      id: url,
+      locale: "en",
+      tt: tt,
+    }),
+    {
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        Origin: "https://ssstik.io",
+        Referer: "https://ssstik.io/en",
+        Cookie: cookies,
+        "HX-Request": "true",
+        "HX-Target": "target",
+        "HX-Current-URL": "https://ssstik.io/en",
       },
-      stats: {
-        views: formatNumber(res.play_count),
-        likes: formatNumber(res.digg_count),
-        comment: formatNumber(res.comment_count),
-        share: formatNumber(res.share_count),
-      },
-    };
-  } catch (e) {
-    throw new Error(e.message);
+    }
+  );
+
+  const $res = cheerio.load(resPost.data);
+  const title = $res(".maintext").text().trim();
+  const downloadLink =
+    $res("a.without_watermark").attr("href") ||
+    $res("a.download_link").attr("href");
+
+  const images = [];
+  $res(".splide__slide img").each((i, el) => {
+    const src = $res(el).attr("src");
+    if (src) images.push({ type: "photo", url: src });
+  });
+
+  const data = [];
+  if (images.length > 0) {
+    data.push(...images);
+  } else if (downloadLink) {
+    data.push({
+      type: "nowatermark",
+      url: downloadLink.startsWith("http")
+        ? downloadLink
+        : `https://ssstik.io${downloadLink}`,
+    });
+  }
+
+  if (data.length === 0) {
+    throw new Error("Tidak dapat menemukan tautan unduhan dari SSSTik.");
+  }
+
+  return {
+    status: true,
+    title: title || "Video TikTok",
+    data,
+  };
+}
+
+export async function tiktokDownloaderVideo(url) {
+  try {
+    return await tiktokTikwmDownloader(url);
+  } catch (errTikwm) {
+    try {
+      return await tiktokSsstikDownloader(url);
+    } catch (errSsstik) {
+      throw new Error(`Gagal mengunduh video TikTok: ${errSsstik.message || errTikwm.message}`);
+    }
   }
 }
 
