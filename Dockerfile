@@ -2,6 +2,7 @@ FROM node:20-bookworm-slim AS pembangun
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
+    fonts-liberation \
     python3 \
     make \
     g++ \
@@ -24,6 +25,7 @@ FROM node:20-bookworm-slim AS produksi
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
+    fonts-liberation \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 

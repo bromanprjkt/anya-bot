@@ -4,6 +4,7 @@ import ffmpegStatic from "ffmpeg-static";
 import fs from "node:fs/promises";
 import { buatPencatat } from "../../utils/logger.js";
 import { layananPenyimpananSementara } from "../storage/temp-storage.js";
+import { DATA_FONT_NARROW } from "../../assets/fonts/font-narrow.js";
 
 const pencatat = buatPencatat("LayananStiker");
 
@@ -197,7 +198,7 @@ export class LayananStiker {
   ): Promise<Buffer> {
     const barisMentah = teks.split(/\r?\n/);
     const daftarBaris: string[] = [];
-    const batasKarakter = 15;
+    const batasKarakter = 12;
 
     for (const baris of barisMentah) {
       const barisTrim = baris.trimEnd();
@@ -206,7 +207,7 @@ export class LayananStiker {
         continue;
       }
 
-      if (barisTrim.length <= batasKarakter || barisTrim.includes("  ")) {
+      if (barisTrim.includes("  ")) {
         daftarBaris.push(barisTrim);
         continue;
       }
@@ -234,11 +235,11 @@ export class LayananStiker {
     let ukuranFont = 84;
 
     if (jumlahBaris === 1) {
-      ukuranFont = 88;
+      ukuranFont = 100;
     } else if (jumlahBaris === 2) {
-      ukuranFont = 84;
+      ukuranFont = 94;
     } else if (jumlahBaris === 3) {
-      ukuranFont = 80;
+      ukuranFont = 84;
     } else if (jumlahBaris === 4) {
       ukuranFont = 78;
     } else if (jumlahBaris === 5) {
@@ -253,25 +254,33 @@ export class LayananStiker {
       ...barisFinal.map((b) => hitungLebarKarakterEfektif(b)),
       1
     );
-    if (lebarEfektifMaks * ukuranFont > 430) {
-      ukuranFont = Math.floor(430 / lebarEfektifMaks);
+    if (lebarEfektifMaks * ukuranFont > 420) {
+      ukuranFont = Math.floor(420 / lebarEfektifMaks);
     }
     ukuranFont = Math.max(24, ukuranFont);
 
-    const jarakBaris = Math.round(ukuranFont * 1.16);
+    const jarakBaris = Math.round(ukuranFont * 1.15);
     const totalTinggi = (jumlahBaris - 1) * jarakBaris + Math.round(ukuranFont * 0.8);
-    const yAwal = Math.round((512 - totalTinggi) / 2 + ukuranFont * 0.76);
+    const yAwal = Math.round((512 - totalTinggi) / 2 + ukuranFont * 0.78);
     const posisiX = 40;
 
     const tspans = barisFinal
       .map((b, i) => {
         const teksAman = sanitasiSvg(b);
-        return `<text x="${posisiX}" y="${yAwal + i * jarakBaris}" xml:space="preserve" font-family="Liberation Sans Narrow, Arial Narrow, DejaVu Sans Condensed, sans-serif" font-size="${ukuranFont}" fill="#000000">${teksAman}</text>`;
+        return `<text x="${posisiX}" y="${yAwal + i * jarakBaris}" xml:space="preserve" font-family="NarrowFont, Liberation Sans Narrow, Arial Narrow, sans-serif" font-size="${ukuranFont}" fill="#000000">${teksAman}</text>`;
       })
       .join("\n");
 
     const svgTeks = `
       <svg width="512" height="512" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <style>
+            @font-face {
+              font-family: "NarrowFont";
+              src: url("${DATA_FONT_NARROW}") format("truetype");
+            }
+          </style>
+        </defs>
         <rect width="512" height="512" fill="#ffffff"/>
         ${tspans}
       </svg>
