@@ -34,6 +34,7 @@ import { perintahToImg } from "./commands/media/toimg.js";
 import { perintahTake } from "./commands/media/take.js";
 import { perintahQC } from "./commands/media/qc.js";
 import { perintahTTP } from "./commands/media/ttp.js";
+import { perintahSmeme } from "./commands/media/smeme.js";
 import { buatPerintahTikTok } from "./commands/media/tiktok.js";
 import { buatPerintahInstagram } from "./commands/media/instagram.js";
 
@@ -88,6 +89,7 @@ export class AplikasiAnya {
     this.registriPerintah.daftarkan(perintahTake);
     this.registriPerintah.daftarkan(perintahQC);
     this.registriPerintah.daftarkan(perintahTTP);
+    this.registriPerintah.daftarkan(perintahSmeme);
 
     this.registriPerintah.daftarkan(buatPerintahTikTok(this.layananPengunduh));
     this.registriPerintah.daftarkan(buatPerintahInstagram(this.layananPengunduh));

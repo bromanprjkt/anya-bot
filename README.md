@@ -109,6 +109,7 @@ Bot WhatsApp berbasis TypeScript dan Baileys dengan fitur stiker, downloader med
 - `!take` / `!colong`: Ubah stiker kutipan jadi foto atau ganti metadata stiker.
 - `!qc <teks>`: Buat stiker Quote Chat percakapan WhatsApp.
 - `!ttp <teks>`: Buat stiker teks dengan latar putih.
+- `!smeme <teks atas> | <teks bawah>` / `!stikermeme`: Buat stiker meme dari gambar atau stiker.
 - `!tiktok` / `!tt <url>`: Download video atau slide foto TikTok tanpa watermark.
 - `!instagram` / `!ig <url>`: Download video Reel atau Post foto Instagram.
 

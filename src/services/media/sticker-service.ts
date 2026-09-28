@@ -197,12 +197,22 @@ export class LayananStiker {
   ): Promise<Buffer> {
     const barisMentah = teks.split(/\r?\n/);
     const daftarBaris: string[] = [];
-    const batasKarakter = 13;
+    const batasKarakter = 15;
 
     for (const baris of barisMentah) {
-      const kataLarik = baris.trim().split(/\s+/);
-      let barisSaatIni = "";
+      const barisTrim = baris.trimEnd();
+      if (!barisTrim) {
+        if (daftarBaris.length > 0) daftarBaris.push("");
+        continue;
+      }
 
+      if (barisTrim.length <= batasKarakter || barisTrim.includes("  ")) {
+        daftarBaris.push(barisTrim);
+        continue;
+      }
+
+      const kataLarik = barisTrim.split(" ");
+      let barisSaatIni = "";
       for (const kata of kataLarik) {
         if (!kata) continue;
         if (!barisSaatIni) {
@@ -220,35 +230,212 @@ export class LayananStiker {
     }
 
     const barisFinal = daftarBaris.length > 0 ? daftarBaris : [teks];
-    const ukuranFont = barisFinal.length <= 2 ? 52 : barisFinal.length <= 4 ? 44 : 34;
-    const jarakBaris = Math.round(ukuranFont * 1.3);
-    const totalTinggi = barisFinal.length * jarakBaris;
-    const yAwal = Math.round((512 - totalTinggi) / 2 + ukuranFont * 0.9);
+    const jumlahBaris = barisFinal.length;
+    let ukuranFont = 84;
+
+    if (jumlahBaris === 1) {
+      ukuranFont = 88;
+    } else if (jumlahBaris === 2) {
+      ukuranFont = 84;
+    } else if (jumlahBaris === 3) {
+      ukuranFont = 80;
+    } else if (jumlahBaris === 4) {
+      ukuranFont = 78;
+    } else if (jumlahBaris === 5) {
+      ukuranFont = 66;
+    } else if (jumlahBaris === 6) {
+      ukuranFont = 56;
+    } else {
+      ukuranFont = Math.max(28, Math.floor(360 / jumlahBaris));
+    }
+
+    const lebarEfektifMaks = Math.max(
+      ...barisFinal.map((b) => hitungLebarKarakterEfektif(b)),
+      1
+    );
+    if (lebarEfektifMaks * ukuranFont > 430) {
+      ukuranFont = Math.floor(430 / lebarEfektifMaks);
+    }
+    ukuranFont = Math.max(24, ukuranFont);
+
+    const jarakBaris = Math.round(ukuranFont * 1.16);
+    const totalTinggi = (jumlahBaris - 1) * jarakBaris + Math.round(ukuranFont * 0.8);
+    const yAwal = Math.round((512 - totalTinggi) / 2 + ukuranFont * 0.76);
+    const posisiX = 40;
 
     const tspans = barisFinal
       .map((b, i) => {
-        const teksAman = b
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")
-          .replace(/"/g, "&quot;")
-          .replace(/'/g, "&apos;");
-        return `<tspan x="50%" y="${yAwal + i * jarakBaris}">${teksAman}</tspan>`;
+        const teksAman = sanitasiSvg(b);
+        return `<text x="${posisiX}" y="${yAwal + i * jarakBaris}" xml:space="preserve" font-family="Liberation Sans Narrow, Arial Narrow, DejaVu Sans Condensed, sans-serif" font-size="${ukuranFont}" fill="#000000">${teksAman}</text>`;
       })
-      .join("");
+      .join("\n");
 
     const svgTeks = `
       <svg width="512" height="512" xmlns="http://www.w3.org/2000/svg">
         <rect width="512" height="512" fill="#ffffff"/>
-        <text x="50%" text-anchor="middle" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="${ukuranFont}" font-weight="bold" fill="#000000">
-          ${tspans}
-        </text>
+        ${tspans}
       </svg>
     `;
 
     const svgBuffer = Buffer.from(svgTeks, "utf-8");
     return await this.gambarKeStiker(svgBuffer, metadata);
   }
+
+  public async buatStikerMeme(
+    bufferGambar: Buffer,
+    teksAtas: string,
+    teksBawah: string,
+    metadata?: MetadataStiker
+  ): Promise<Buffer> {
+    pencatat.debug("Membuat stiker meme dari gambar");
+
+    const metadataInput = await sharp(bufferGambar).metadata();
+    const lebarAsli = metadataInput.width ?? 512;
+    const tinggiAsli = metadataInput.height ?? 512;
+
+    const rasio = lebarAsli / tinggiAsli;
+    let lebarGambar = 512;
+    let tinggiGambar = 512;
+    let offsetY = 0;
+
+    if (rasio >= 1) {
+      tinggiGambar = Math.round(512 / rasio);
+      offsetY = Math.round((512 - tinggiGambar) / 2);
+    } else {
+      lebarGambar = Math.round(512 * rasio);
+    }
+
+    const barisAtas = pisahDanBungkusBaris(teksAtas);
+    const barisBawah = pisahDanBungkusBaris(teksBawah);
+
+    const panjangMaksimal = Math.max(
+      ...barisAtas.map((b) => b.length),
+      ...barisBawah.map((b) => b.length),
+      0
+    );
+
+    let ukuranFont = 40;
+    if (panjangMaksimal > 22 || barisAtas.length + barisBawah.length > 4) {
+      ukuranFont = 28;
+    } else if (panjangMaksimal > 16 || barisAtas.length + barisBawah.length > 2) {
+      ukuranFont = 34;
+    }
+
+    if (lebarGambar < 350) {
+      ukuranFont = Math.min(ukuranFont, Math.round(lebarGambar / 10));
+    }
+
+    const jarakBaris = Math.round(ukuranFont * 1.15);
+    const ketebalanGaris = Math.max(2, Math.round(ukuranFont * 0.08));
+
+    const posAtas = barisAtas.map(
+      (_, i) => offsetY + Math.round(ukuranFont * 1.05) + i * jarakBaris
+    );
+    const yBawahAkhir = offsetY + tinggiGambar - Math.round(ukuranFont * 0.35);
+    const posBawah = barisBawah.map(
+      (_, i) => yBawahAkhir - (barisBawah.length - 1 - i) * jarakBaris
+    );
+
+    const teksAtasSvg = barisAtas
+      .map((baris, i) => {
+        const teksAman = sanitasiSvg(baris.toUpperCase());
+        return `<text x="256" y="${posAtas[i]}" class="meme-teks" font-size="${ukuranFont}">${teksAman}</text>`;
+      })
+      .join("\n");
+
+    const teksBawahSvg = barisBawah
+      .map((baris, i) => {
+        const teksAman = sanitasiSvg(baris.toUpperCase());
+        return `<text x="256" y="${posBawah[i]}" class="meme-teks" font-size="${ukuranFont}">${teksAman}</text>`;
+      })
+      .join("\n");
+
+    const svgMeme = `
+      <svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+        <style>
+          .meme-teks {
+            font-family: Impact, "Arial Black", "Trebuchet MS", sans-serif;
+            font-weight: 900;
+            fill: #ffffff;
+            stroke: #000000;
+            stroke-width: ${ketebalanGaris}px;
+            paint-order: stroke fill;
+            stroke-linejoin: round;
+            text-anchor: middle;
+          }
+        </style>
+        ${teksAtasSvg}
+        ${teksBawahSvg}
+      </svg>
+    `;
+
+    const webpBuffer = await sharp(bufferGambar)
+      .resize(512, 512, {
+        fit: "contain",
+        background: { r: 0, g: 0, b: 0, alpha: 0 },
+      })
+      .composite([{ input: Buffer.from(svgMeme, "utf-8"), top: 0, left: 0 }])
+      .webp({ quality: 80 })
+      .toBuffer();
+
+    const exif = buatBufferExif(metadata?.namaPaket, metadata?.pembuat);
+    return sisipkanExifKeWebp(webpBuffer, exif);
+  }
+}
+
+function sanitasiSvg(teks: string): string {
+  return teks
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
+
+function hitungLebarKarakterEfektif(teks: string): number {
+  let lebar = 0;
+  for (const c of teks) {
+    if (c === " ") {
+      lebar += 0.24;
+    } else if (c === c.toUpperCase() && c !== c.toLowerCase()) {
+      lebar += 0.52;
+    } else {
+      lebar += 0.44;
+    }
+  }
+  return lebar;
+}
+
+function bungkusTeksMeme(teks: string, batasKarakter: number = 22): string[] {
+  if (!teks.trim()) return [];
+  const kataLarik = teks.trim().split(/\s+/);
+  const daftarBaris: string[] = [];
+  let barisSaatIni = "";
+
+  for (const kata of kataLarik) {
+    if (!kata) continue;
+    if (!barisSaatIni) {
+      barisSaatIni = kata;
+    } else if ((barisSaatIni + " " + kata).length <= batasKarakter) {
+      barisSaatIni += " " + kata;
+    } else {
+      daftarBaris.push(barisSaatIni);
+      barisSaatIni = kata;
+    }
+  }
+  if (barisSaatIni) {
+    daftarBaris.push(barisSaatIni);
+  }
+  return daftarBaris;
+}
+
+function pisahDanBungkusBaris(teks: string, batasKarakter: number = 22): string[] {
+  const barisMentah = teks.split(/\r?\n/).map((b) => b.trim()).filter(Boolean);
+  const hasil: string[] = [];
+  for (const baris of barisMentah) {
+    hasil.push(...bungkusTeksMeme(baris, batasKarakter));
+  }
+  return hasil;
 }
 
 export const layananStiker = new LayananStiker();

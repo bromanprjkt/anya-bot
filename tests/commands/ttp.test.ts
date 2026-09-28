@@ -85,4 +85,25 @@ describe("Perintah TTP (Teks ke Stiker)", () => {
     const opsiPesan = sendMessageMock.mock.calls[0][1];
     expect(opsiPesan).toHaveProperty("sticker");
   });
+
+  it("harus mendukung teks multi-baris dengan format spasi khusus", async () => {
+    const sendMessageMock = vi.fn().mockResolvedValue({});
+    const konteks = buatKonteksTiruan({
+      teksArgumen: "top            #1\norang paling\nnonchalant\nin the world",
+      soket: {
+        sendMessage: sendMessageMock,
+      } as any,
+    });
+
+    await perintahTTP.jalankan(konteks);
+
+    expect(sendMessageMock).toHaveBeenCalledTimes(1);
+    const opsiPesan = sendMessageMock.mock.calls[0][1];
+    expect(opsiPesan).toHaveProperty("sticker");
+
+    const metadata = await sharp(opsiPesan.sticker).metadata();
+    expect(metadata.format).toBe("webp");
+    expect(metadata.width).toBe(512);
+    expect(metadata.height).toBe(512);
+  });
 });

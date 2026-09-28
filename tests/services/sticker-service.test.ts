@@ -65,4 +65,60 @@ describe("LayananStiker", () => {
     expect(info.width).toBe(512);
     expect(info.height).toBe(512);
   });
+
+  it("harus membuat stiker meme dari gambar dengan teks atas dan bawah", async () => {
+    const bufferGambar = await sharp({
+      create: {
+        width: 400,
+        height: 300,
+        channels: 4,
+        background: { r: 100, g: 150, b: 200, alpha: 1 },
+      },
+    })
+      .png()
+      .toBuffer();
+
+    const stikerMeme = await layanan.buatStikerMeme(
+      bufferGambar,
+      "Teks Atas Uji",
+      "Teks Bawah Uji",
+      {
+        namaPaket: "Paket Uji",
+        pembuat: "Tester",
+      }
+    );
+
+    expect(stikerMeme).toBeDefined();
+    expect(stikerMeme.length).toBeGreaterThan(0);
+
+    const info = await sharp(stikerMeme).metadata();
+    expect(info.format).toBe("webp");
+    expect(info.width).toBe(512);
+    expect(info.height).toBe(512);
+  });
+
+  it("harus mendukung stiker meme dengan karakter khusus XML", async () => {
+    const bufferGambar = await sharp({
+      create: {
+        width: 100,
+        height: 100,
+        channels: 4,
+        background: { r: 50, g: 50, b: 50, alpha: 1 },
+      },
+    })
+      .png()
+      .toBuffer();
+
+    const stikerMeme = await layanan.buatStikerMeme(
+      bufferGambar,
+      "A & B < C > D",
+      "'Petik' & \"Kutip\""
+    );
+
+    expect(stikerMeme).toBeDefined();
+    const info = await sharp(stikerMeme).metadata();
+    expect(info.format).toBe("webp");
+    expect(info.width).toBe(512);
+    expect(info.height).toBe(512);
+  });
 });
