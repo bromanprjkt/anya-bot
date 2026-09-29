@@ -34,6 +34,18 @@ const skemaEnv = z.object({
     )
     .default(KONFIGURASI_BAWAAN.BACA_PESAN_OTOMATIS),
   BOT_VERSION: z.string().default(KONFIGURASI_BAWAAN.VERSI_BOT),
+  AI_ENABLED: z
+    .preprocess(
+      (nilai) => (typeof nilai === "string" ? nilai.toLowerCase() === "true" || nilai === "1" : nilai),
+      z.boolean()
+    )
+    .default(KONFIGURASI_BAWAAN.AI_AKTIF),
+  AI_BASE_URL: z.string().default(KONFIGURASI_BAWAAN.AI_BASE_URL),
+  AI_API_KEY: z.string().default(KONFIGURASI_BAWAAN.AI_API_KEY),
+  AI_MODEL: z.string().default(KONFIGURASI_BAWAAN.AI_MODEL),
+  AI_FALLBACK_BASE_URL: z.string().default(KONFIGURASI_BAWAAN.AI_FALLBACK_BASE_URL),
+  AI_FALLBACK_API_KEY: z.string().default(KONFIGURASI_BAWAAN.AI_FALLBACK_API_KEY),
+  AI_FALLBACK_MODEL: z.string().default(KONFIGURASI_BAWAAN.AI_FALLBACK_MODEL),
 });
 
 export interface KonfigurasiEnv {
@@ -49,6 +61,13 @@ export interface KonfigurasiEnv {
   kunciApiPengunduh: string;
   bacaPesanOtomatis: boolean;
   versiBot: string;
+  aiAktif: boolean;
+  aiBaseUrl: string;
+  aiApiKey: string;
+  aiModel: string;
+  aiFallbackBaseUrl: string;
+  aiFallbackApiKey: string;
+  aiFallbackModel: string;
 }
 
 export function uraiKonfigurasiEnv(
@@ -80,6 +99,13 @@ export function uraiKonfigurasiEnv(
     kunciApiPengunduh: data.DOWNLOADER_API_KEY,
     bacaPesanOtomatis: data.AUTO_READ,
     versiBot: data.BOT_VERSION,
+    aiAktif: data.AI_ENABLED && variabelLingkungan.AI_REPLY_FALLBACK2_ENABLED !== "false",
+    aiBaseUrl: variabelLingkungan.AI_REPLY_FALLBACK2_BASE_URL || data.AI_BASE_URL,
+    aiApiKey: variabelLingkungan.AI_REPLY_FALLBACK2_API_KEY || data.AI_API_KEY,
+    aiModel: variabelLingkungan.AI_REPLY_FALLBACK2_MODEL || data.AI_MODEL,
+    aiFallbackBaseUrl: variabelLingkungan.AI_REPLY_FALLBACK_BASE_URL || data.AI_FALLBACK_BASE_URL,
+    aiFallbackApiKey: variabelLingkungan.AI_REPLY_FALLBACK_API_KEY || data.AI_FALLBACK_API_KEY,
+    aiFallbackModel: variabelLingkungan.AI_REPLY_FALLBACK_MODEL || data.AI_FALLBACK_MODEL,
   };
 }
 

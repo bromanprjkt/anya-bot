@@ -12,6 +12,11 @@ Bot WhatsApp berbasis TypeScript dan Baileys dengan fitur stiker, downloader med
 
 ## 1. Fitur Utama
 
+- **Karakter AI Anya**:
+  - Mengobrol interaktif dengan AI persona Anya Forger via perintah `!ai <pertanyaan>` (alias: `!tanya`, `!ask`, `!anya`).
+  - Obrolan santai tanpa awalan (prefixless) cukup dengan mengetik diawali kata `anya ...`, tag/mention bot, atau membalas pesan bot.
+  - Multi-turn memory percakapan dan proteksi failover otomatis ke penyedia AI cadangan.
+
 - **Stiker & Media**:
   - Konversi gambar dan video singkat (durasi < 10 detik) ke stiker WebP statis maupun animasi.
   - Konversi stiker WebP kembali menjadi gambar PNG (`!toimg`).
@@ -92,6 +97,13 @@ Bot WhatsApp berbasis TypeScript dan Baileys dengan fitur stiker, downloader med
 | `AUTO_READ` | Boolean | `true` | Centang biru pesan masuk otomatis |
 | `DOWNLOADER_API_URL` | String | (Kosong) | Endpoint API scraper tambahan |
 | `DOWNLOADER_API_KEY` | String | (Kosong) | Kunci otentikasi API scraper eksternal |
+| `AI_ENABLED` | Boolean | `true` | Mengaktifkan respon AI Anya |
+| `AI_BASE_URL` | String | `https://tokenharbor.ai/v1` | Endpoint API AI utama (OpenAI-compatible) |
+| `AI_API_KEY` | String | (Kosong) | Kunci API penyedia AI utama |
+| `AI_MODEL` | String | `deepseek-v4.1-flash:free` | Nama model AI utama |
+| `AI_FALLBACK_BASE_URL` | String | `https://codecraftapi.com/v1` | Endpoint API AI cadangan |
+| `AI_FALLBACK_API_KEY` | String | (Kosong) | Kunci API penyedia AI cadangan |
+| `AI_FALLBACK_MODEL` | String | `deepseek-v4-pro-0813` | Nama model AI cadangan |
 
 ---
 
@@ -99,6 +111,7 @@ Bot WhatsApp berbasis TypeScript dan Baileys dengan fitur stiker, downloader med
 
 ### Umum
 - `!menu`: Menampilkan menu perintah sesuai izin akses pengguna beserta banner bot.
+- `!ai <pertanyaan>` / `!tanya` / `!ask` / `!anya`: Mengobrol interaktif dengan AI persona Anya Forger (bisa juga langsung panggil `anya ...` tanpa awalan).
 - `!ping`: Cek latensi dan waktu aktif bot.
 - `!owner`: Kontak nomor pemilik bot.
 - `!help [perintah]`: Panduan penggunaan bot atau informasi detail perintah.
@@ -142,10 +155,6 @@ Bot WhatsApp berbasis TypeScript dan Baileys dengan fitur stiker, downloader med
 - Pemeriksaan tipe data TypeScript:
   ```bash
   pnpm typecheck
-  ```
-- Menjalankan unit test:
-  ```bash
-  pnpm test
   ```
 - Kompilasi TypeScript ke folder `dist/`:
   ```bash

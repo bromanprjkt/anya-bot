@@ -45,6 +45,7 @@ yarn-error.log*
 pnpm-debug.log*
 
 # Test Coverage & Reports
+tests/
 coverage/
 .nyc_output/
 *.lcov

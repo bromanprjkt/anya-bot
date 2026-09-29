@@ -7,4 +7,11 @@ export const KONFIGURASI_BAWAAN = {
   NAMA_SESI: "anya-session",
   BATAS_PEKERJAAN_MEDIA_BERSAMAAN: 2,
   BACA_PESAN_OTOMATIS: true,
+  AI_AKTIF: true,
+  AI_BASE_URL: "https://tokenharbor.ai/v1",
+  AI_API_KEY: "",
+  AI_MODEL: "deepseek-v4.1-flash:free",
+  AI_FALLBACK_BASE_URL: "https://codecraftapi.com/v1",
+  AI_FALLBACK_API_KEY: "",
+  AI_FALLBACK_MODEL: "deepseek-v4-pro-0813",
 } as const;

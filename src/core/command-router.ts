@@ -5,6 +5,8 @@ import { periksaIzinPerintah } from "./permissions.js";
 import { tanganiKesalahanPerintah } from "./error-handler.js";
 import { buatPencatat } from "../utils/logger.js";
 import type { KonfigurasiEnv } from "../config/env.js";
+import { pembatasFrekuensi } from "./rate-limiter.js";
+import { layananAi } from "../services/ai/ai-service.js";
 
 const pencatat = buatPencatat("PerutePerintah");
 
@@ -32,8 +34,56 @@ export class PerutePerintah {
     const teks = this.ekstrakTeksPesan(pesan);
     if (!teks) return;
 
+    const idObrolan = pesan.key.remoteJid ?? "";
+    const adalahGrup = idObrolan.endsWith("@g.us");
+    const idPengirim = adalahGrup
+      ? (pesan.key.participant ?? pesan.participant ?? "")
+      : idObrolan;
+    const namaPengirim = pesan.pushName ?? "Pengguna";
+
     const awalan = this.konfigurasi.awalanPerintah;
-    if (!teks.startsWith(awalan)) return;
+
+    if (!teks.startsWith(awalan)) {
+      if (!this.konfigurasi.aiAktif) return;
+
+      const botJid = soket.user?.id ? soket.user.id.split(":")[0] + "@s.whatsapp.net" : "";
+      const infoKonteks = pesan.message?.extendedTextMessage?.contextInfo;
+      const disebutDalamPesan = Boolean(botJid && infoKonteks?.mentionedJid?.includes(botJid));
+      const membalasPesanBot = Boolean(
+        botJid &&
+        infoKonteks?.participant &&
+        infoKonteks.participant.split(":")[0] + "@s.whatsapp.net" === botJid
+      );
+      const diawaliKataAnya = /^anya\b[\s,.:!?]*/i.test(teks);
+
+      const pemicuAi = adalahGrup
+        ? diawaliKataAnya || disebutDalamPesan || membalasPesanBot
+        : diawaliKataAnya || true;
+
+      if (!pemicuAi) return;
+
+      let prompt = teks;
+      if (diawaliKataAnya) {
+        prompt = teks.replace(/^anya\b[\s,.:!?]*/i, "").trim();
+      }
+      if (!prompt) {
+        prompt = "Halo Anya";
+      }
+
+      const batas = pembatasFrekuensi.periksaBatas(idPengirim, 5, 10000);
+      if (!batas.diizinkan) return;
+
+      try {
+        if (typeof soket.sendPresenceUpdate === "function") {
+          await soket.sendPresenceUpdate("composing", idObrolan).catch(() => {});
+        }
+        const balasanAi = await layananAi.tanyaAi(idObrolan, prompt, namaPengirim);
+        await soket.sendMessage(idObrolan, { text: balasanAi }, { quoted: pesan });
+      } catch (kesalahan) {
+        pencatat.error({ kesalahan, idObrolan }, "Gagal memproses percakapan santai AI");
+      }
+      return;
+    }
 
     const tanpaAwalan = teks.slice(awalan.length).trim();
     if (!tanpaAwalan) return;
@@ -45,13 +95,6 @@ export class PerutePerintah {
 
     const perintah = this.registri.cariPerintah(namaPerintah);
     if (!perintah) return;
-
-    const idObrolan = pesan.key.remoteJid ?? "";
-    const adalahGrup = idObrolan.endsWith("@g.us");
-    const idPengirim = adalahGrup
-      ? (pesan.key.participant ?? pesan.participant ?? "")
-      : idObrolan;
-    const namaPengirim = pesan.pushName ?? "Pengguna";
 
     let adalahAdmin = false;
     let adalahAdminBot = false;
