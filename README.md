@@ -15,7 +15,9 @@ Bot WhatsApp berbasis TypeScript dan Baileys dengan fitur stiker, downloader med
 - **Karakter AI Anya**:
   - Mengobrol interaktif dengan AI persona Anya Forger via perintah `!ai <pertanyaan>` (alias: `!tanya`, `!ask`, `!anya`).
   - Obrolan santai tanpa awalan (prefixless) cukup dengan mengetik diawali kata `anya ...`, tag/mention bot, atau membalas pesan bot.
-  - Multi-turn memory percakapan dan proteksi failover otomatis ke penyedia AI cadangan.
+  - Dilengkapi alat pencarian web (*web search tool*) otomatis agar respon AI selalu mutakhir dengan informasi, berita, dan fakta terkini.
+  - Memori percakapan persisten berbasis SQLite: ingatan disimpan terpisah per ID grup (dengan identifikasi nama dan nomor masing-masing peserta) dan per nomor pengguna di chat pribadi.
+  - Dukungan reset ingatan percakapan (`!ai reset` atau ketik `reset`) dan proteksi failover otomatis ke penyedia AI cadangan.
 
 - **Stiker & Media**:
   - Konversi gambar dan video singkat (durasi < 10 detik) ke stiker WebP statis maupun animasi.

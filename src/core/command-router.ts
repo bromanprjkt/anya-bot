@@ -77,7 +77,15 @@ export class PerutePerintah {
         if (typeof soket.sendPresenceUpdate === "function") {
           await soket.sendPresenceUpdate("composing", idObrolan).catch(() => {});
         }
-        const balasanAi = await layananAi.tanyaAi(idObrolan, prompt, namaPengirim);
+        const balasanAi = await layananAi.tanyaAi(
+          idObrolan,
+          prompt,
+          namaPengirim,
+          {
+            adalahGrup,
+            idPengguna: idPengirim,
+          }
+        );
         await soket.sendMessage(idObrolan, { text: balasanAi }, { quoted: pesan });
       } catch (kesalahan) {
         pencatat.error({ kesalahan, idObrolan }, "Gagal memproses percakapan santai AI");

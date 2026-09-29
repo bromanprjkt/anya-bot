@@ -25,7 +25,11 @@ export const perintahAi: PerintahBot = {
       const balasan = await layananAi.tanyaAi(
         konteks.idObrolan,
         prompt,
-        konteks.namaPengirim
+        konteks.namaPengirim,
+        {
+          adalahGrup: konteks.adalahGrup,
+          idPengguna: konteks.idPengguna,
+        }
       );
 
       await konteks.balas(balasan);
