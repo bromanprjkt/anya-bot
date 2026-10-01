@@ -1,0 +1,104 @@
+name: CI & Rilis
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build & Typecheck
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout kode
+        uses: actions/checkout@v4
+
+      - name: Pasang Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Pasang pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 12.6.0
+
+      - name: Ambil jalur penyimpanan pnpm
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Tembolok dependensi pnpm
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Pasang dependensi
+        run: pnpm install --frozen-lockfile
+
+      - name: Periksa tipe TypeScript
+        run: pnpm run typecheck
+
+      - name: Bangun proyek
+        run: pnpm run build
+
+      - name: Unggah artefak kompilasi
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-artifact
+          path: dist
+
+  release:
+    name: Rilis GitHub
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main')
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout kode
+        uses: actions/checkout@v4
+
+      - name: Unduh artefak kompilasi
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-artifact
+          path: dist
+
+      - name: Buat paket dan rilis GitHub
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            TAG="${{ github.ref_name }}"
+          else
+            VERSION=$(node -p "require('./package.json').version")
+            TAG="v${VERSION}"
+          fi
+
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            echo "Rilis $TAG sudah ada, melewati proses pembuatan rilis."
+            exit 0
+          fi
+
+          tar -czf "anya-bot-${TAG}.tar.gz" dist package.json pnpm-lock.yaml .env.example README.md
+          zip -r "anya-bot-${TAG}.zip" dist package.json pnpm-lock.yaml .env.example README.md
+
+          gh release create "$TAG" \
+            "anya-bot-${TAG}.tar.gz" \
+            "anya-bot-${TAG}.zip" \
+            --target "$GITHUB_SHA" \
+            --title "Anya Bot $TAG" \
+            --generate-notes
