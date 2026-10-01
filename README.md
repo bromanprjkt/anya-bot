@@ -4,20 +4,23 @@
 
 # Anya Bot
 
-Bot WhatsApp berbasis TypeScript dan Baileys dengan fitur stiker, downloader media (TikTok & Instagram), moderasi, dan manajemen grup.
+Bot WhatsApp berbasis TypeScript dan Baileys dengan kecerdasan buatan multimodal, stiker, downloader media (TikTok & Instagram), moderasi, dan manajemen grup.
 
-**Versi:** 0.1 beta
+**Versi:** 0.2.0
 
 ---
 
 ## 1. Fitur Utama
 
-- **Karakter AI Anya**:
+- **Karakter AI Anya (Multimodal & Cerdas)**:
   - Mengobrol interaktif dengan AI persona Anya Forger via perintah `!ai <pertanyaan>` (alias: `!tanya`, `!ask`, `!anya`).
   - Obrolan santai tanpa awalan (prefixless) cukup dengan mengetik diawali kata `anya ...`, tag/mention bot, atau membalas pesan bot.
-  - Dilengkapi alat pencarian web (*web search tool*) otomatis agar respon AI selalu mutakhir dengan informasi, berita, dan fakta terkini.
-  - Memori percakapan persisten berbasis SQLite: ingatan disimpan terpisah per ID grup (dengan identifikasi nama dan nomor masing-masing peserta) dan per nomor pengguna di chat pribadi.
-  - Dukungan reset ingatan percakapan (`!ai reset` atau ketik `reset`) dan proteksi failover otomatis ke penyedia AI cadangan.
+  - **Vision Multimodal**: Mampu melihat dan menganalisis foto/gambar yang dikirimkan langsung maupun melalui balasan pesan (*quote reply*).
+  - **Transkripsi Pesan Suara (Voice Note)**: Mampu mendengarkan dan memahami rekaman audio WhatsApp (.ogg Opus) yang dikonversi otomatis ke WAV 16kHz.
+  - **Pembaca Dokumen & Kode Sumber**: Membaca dan menganalisis isi berkas PDF, dokumen teks, hingga file kode sumber program (TypeScript, JavaScript, Go, Python, JSON, CSV, Markdown, dsb.).
+  - **Pencarian Web & Ekstraksi Halaman**: Terintegrasi dengan alat pencarian web mutakhir serta kemampuan membaca konten artikel web dan repositori GitHub secara langsung.
+  - **Memori Profil Jangka Panjang**: Menyimpan fakta-fakta penting profil pengguna ke basis data SQLite secara permanen agar Anya selalu mengingat karakteristik lawan bicaranya.
+  - **Memori Percakapan Grup & Pribadi**: Riwayat obrolan tersimpan persisten berbasis SQLite per grup/pengguna dengan dukungan reset ingatan (`!ai reset`) dan proteksi failover otomatis ke model cadangan.
 
 - **Stiker & Media**:
   - Konversi gambar dan video singkat (durasi < 10 detik) ke stiker WebP statis maupun animasi.
@@ -54,8 +57,8 @@ Bot WhatsApp berbasis TypeScript dan Baileys dengan fitur stiker, downloader med
 ## 2. Persyaratan Sistem
 
 - Node.js LTS (v20+)
-- pnpm (v9+)
-- FFmpeg (tersedia di PATH sistem atau melalui Docker)
+- pnpm (v10+ / v12+)
+- FFmpeg (tersedia di PATH sistem atau melalui runtime dependensi)
 - SQLite3
 - Docker & Docker Compose (opsional untuk deployment kontainer)
 
@@ -91,7 +94,7 @@ Bot WhatsApp berbasis TypeScript dan Baileys dengan fitur stiker, downloader med
 | `LOG_LEVEL` | String | `info` | Tingkat log Pino (`fatal`, `error`, `warn`, `info`, `debug`, `trace`, `silent`) |
 | `BOT_PREFIX` | String | `!` | Awalan pemicu perintah bot |
 | `BOT_OWNER_ID` | String | (Kosong) | JID WhatsApp pemilik bot (contoh: `6281234567890@s.whatsapp.net`) |
-| `BOT_VERSION` | String | `0.1 beta` | Versi aktif bot |
+| `BOT_VERSION` | String | `0.2.0` | Versi aktif bot |
 | `DATABASE_PATH` | String | `./data/anya.db` | Jalur basis data SQLite |
 | `TEMP_DIRECTORY` | String | `./temp` | Direktori file olahan sementara |
 | `SESSION_NAME` | String | `anya-session` | Nama folder kredensial sesi Baileys |
@@ -169,7 +172,15 @@ Bot WhatsApp berbasis TypeScript dan Baileys dengan fitur stiker, downloader med
 
 ---
 
-## 7. Menjalankan dengan Docker
+## 7. CI/CD & Rilis Otomatis
+
+Repositori ini dilengkapi GitHub Actions workflow (`.github/workflows/ci.yml`):
+- **Pemeriksaan Otomatis**: Menjalankan pengujian tipe TypeScript (`pnpm run typecheck`) dan kompilasi proyek (`pnpm run build`) pada setiap push dan pull request.
+- **Penerbitan Rilis**: Otomatis mengemas paket build ke dalam arsip `.tar.gz` dan `.zip`, membuat tag versi, dan menerbitkan rilis resmi di GitHub Releases ketika versi baru didorong ke branch `main` atau melalui git tag `v*`.
+
+---
+
+## 8. Menjalankan dengan Docker
 
 ```bash
 docker compose up -d
@@ -179,8 +190,6 @@ Sesi login WhatsApp dan database SQLite tersimpan persisten pada folder `./data`
 
 ---
 
-
-
-## 8. Lisensi
+## 9. Lisensi
 
 GPL License.
