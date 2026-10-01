@@ -92,6 +92,78 @@ export class RepositoriMemoriAi {
     `);
     stmt.run(idSesi, idSesi, batasMaksimal);
   }
+
+  public simpanFakta(
+    idPengguna: string,
+    namaPengguna: string,
+    fakta: string,
+    kategori = "umum"
+  ): void {
+    const idBersih = (idPengguna.split("@")[0]?.split(":")[0] || idPengguna).trim();
+    if (!idBersih || !fakta.trim()) return;
+
+    const waktu = Date.now();
+    const cekAda = this.db.prepare(`
+      SELECT id FROM ai_user_facts
+      WHERE id_pengguna = ? AND fakta = ?
+    `).get(idBersih, fakta.trim());
+
+    if (cekAda) return;
+
+    const stmt = this.db.prepare(`
+      INSERT INTO ai_user_facts (id_pengguna, nama_pengguna, kategori, fakta, dibuat_pada)
+      VALUES (?, ?, ?, ?, ?)
+    `);
+    stmt.run(idBersih, namaPengguna, kategori.trim().toLowerCase(), fakta.trim(), waktu);
+  }
+
+  public ambilFaktaPengguna(idPengguna: string, batas = 10): EntriFaktaPengguna[] {
+    const idBersih = (idPengguna.split("@")[0]?.split(":")[0] || idPengguna).trim();
+    if (!idBersih) return [];
+
+    const stmt = this.db.prepare(`
+      SELECT * FROM ai_user_facts
+      WHERE id_pengguna = ?
+      ORDER BY dibuat_pada DESC
+      LIMIT ?
+    `);
+
+    const daftar = stmt.all(idBersih, batas) as BarisFaktaDb[];
+    return daftar.map((b) => ({
+      id: b.id,
+      idPengguna: b.id_pengguna,
+      namaPengguna: b.nama_pengguna,
+      kategori: b.kategori,
+      fakta: b.fakta,
+      dibuatPada: b.dibuat_pada,
+    }));
+  }
+
+  public hapusFaktaPengguna(idPengguna: string): void {
+    const idBersih = (idPengguna.split("@")[0]?.split(":")[0] || idPengguna).trim();
+    if (!idBersih) return;
+
+    const stmt = this.db.prepare("DELETE FROM ai_user_facts WHERE id_pengguna = ?");
+    stmt.run(idBersih);
+  }
+}
+
+export interface EntriFaktaPengguna {
+  id: number;
+  idPengguna: string;
+  namaPengguna: string;
+  kategori: string;
+  fakta: string;
+  dibuatPada: number;
+}
+
+interface BarisFaktaDb {
+  id: number;
+  id_pengguna: string;
+  nama_pengguna: string;
+  kategori: string;
+  fakta: string;
+  dibuat_pada: number;
 }
 
 export const repositoriMemoriAi = new RepositoriMemoriAi();

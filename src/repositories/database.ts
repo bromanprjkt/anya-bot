@@ -57,6 +57,17 @@ function inisialisasiSkema(db: Database.Database): void {
     );
 
     CREATE INDEX IF NOT EXISTS idx_ai_memory_sesi ON ai_memory(id_sesi, dibuat_pada);
+
+    CREATE TABLE IF NOT EXISTS ai_user_facts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id_pengguna TEXT NOT NULL,
+      nama_pengguna TEXT NOT NULL,
+      kategori TEXT NOT NULL,
+      fakta TEXT NOT NULL,
+      dibuat_pada INTEGER NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_ai_user_facts_pengguna ON ai_user_facts(id_pengguna, dibuat_pada);
   `);
 
   pencatat.info("Skema basis data SQLite berhasil disiapkan");

@@ -14,6 +14,8 @@ export interface PesanKutipan {
   adalahGambar: boolean;
   adalahVideo: boolean;
   adalahStiker: boolean;
+  adalahAudio?: boolean;
+  adalahDokumen?: boolean;
   pesanMentah: any; 
 }
 
@@ -46,7 +48,8 @@ export async function unduhMediaPesan(
     isiPesan.imageMessage ||
     isiPesan.videoMessage ||
     isiPesan.stickerMessage ||
-    isiPesan.documentMessage
+    isiPesan.documentMessage ||
+    isiPesan.audioMessage
   );
 
   try {
@@ -69,7 +72,8 @@ export async function unduhMediaPesan(
         pesanKutipan.imageMessage ||
         pesanKutipan.videoMessage ||
         pesanKutipan.stickerMessage ||
-        pesanKutipan.documentMessage
+        pesanKutipan.documentMessage ||
+        pesanKutipan.audioMessage
       );
 
       if (memilikiMediaKutipan) {

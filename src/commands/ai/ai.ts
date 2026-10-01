@@ -1,6 +1,7 @@
 import type { PerintahBot } from "../../core/command-registry.js";
 import type { KonteksPerintah } from "../../core/message-context.js";
 import { layananAi } from "../../services/ai/ai-service.js";
+import { bacaDokumenLampiran } from "../../services/ai/tools/document-reader.js";
 
 export const perintahAi: PerintahBot = {
   nama: "ai",
@@ -8,11 +9,44 @@ export const perintahAi: PerintahBot = {
   deskripsi: "Bertanya atau mengobrol dengan AI Anya",
   kategori: "general",
   jalankan: async (konteks: KonteksPerintah) => {
-    const prompt = konteks.teksArgumen.trim();
+    let prompt = konteks.teksArgumen.trim();
+    let gambarBase64: string[] | undefined;
+
+    const mediaBuf = await konteks.unduhMedia().catch(() => null);
+    if (mediaBuf) {
+      const pesan = konteks.pesanMentah.message;
+      const kutipan = pesan?.extendedTextMessage?.contextInfo?.quotedMessage;
+      const adalahGambar = Boolean(pesan?.imageMessage || kutipan?.imageMessage);
+      const adalahDokumen = Boolean(pesan?.documentMessage || kutipan?.documentMessage);
+
+      if (adalahGambar) {
+        const mime =
+          pesan?.imageMessage?.mimetype ||
+          kutipan?.imageMessage?.mimetype ||
+          "image/jpeg";
+        gambarBase64 = [`data:${mime};base64,${mediaBuf.toString("base64")}`];
+        if (!prompt) {
+          prompt = "Jelaskan atau baca isi dari gambar ini";
+        }
+      } else if (adalahDokumen) {
+        const namaBerkas =
+          pesan?.documentMessage?.fileName ||
+          kutipan?.documentMessage?.fileName ||
+          "dokumen";
+        const mime =
+          pesan?.documentMessage?.mimetype ||
+          kutipan?.documentMessage?.mimetype ||
+          "";
+        const teksDokumen = await bacaDokumenLampiran(mediaBuf, namaBerkas, mime);
+        if (teksDokumen) {
+          prompt = `[Isi Dokumen "${namaBerkas}"]:\n${teksDokumen}\n\n${prompt || "Tolong baca dan analisis isi berkas dokumen di atas."}`;
+        }
+      }
+    }
 
     if (!prompt) {
       await konteks.balas(
-        "Ketik !ai <pertanyaan> untuk mengobrol dengan Anya.\nContoh: !ai kamu lagi apa?"
+        "Ketik !ai <pertanyaan> atau kirim gambar/dokumen dengan perintah !ai untuk bertanya kepada Anya."
       );
       return;
     }
@@ -29,6 +63,7 @@ export const perintahAi: PerintahBot = {
         {
           adalahGrup: konteks.adalahGrup,
           idPengguna: konteks.idPengguna,
+          gambarBase64,
         }
       );
 

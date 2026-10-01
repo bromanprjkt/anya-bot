@@ -1,6 +1,6 @@
 import { konfigurasiEnv, type KonfigurasiEnv } from "../../config/env.js";
 import { buatPencatat } from "../../utils/logger.js";
-import { cariWeb } from "./tools/web-search.js";
+import { cariWeb, bacaHalamanWeb } from "./tools/web-search.js";
 import { repositoriMemoriAi } from "../../repositories/ai-memory-repository.js";
 
 const pencatat = buatPencatat("LayananAi");
@@ -14,9 +14,23 @@ export interface PanggilanAlatAi {
   };
 }
 
+export interface BagianKontenTeks {
+  type: "text";
+  text: string;
+}
+
+export interface BagianKontenGambar {
+  type: "image_url";
+  image_url: {
+    url: string;
+  };
+}
+
+export type KontenPesanAi = string | (BagianKontenTeks | BagianKontenGambar)[];
+
 export interface PesanAi {
   role: "system" | "user" | "assistant" | "tool";
-  content?: string | null;
+  content?: KontenPesanAi | null;
   tool_calls?: PanggilanAlatAi[];
   tool_call_id?: string;
 }
@@ -24,6 +38,156 @@ export interface PesanAi {
 export interface OpsiKonteksObrolan {
   adalahGrup?: boolean;
   idPengguna?: string;
+  gambarBase64?: string[];
+}
+
+interface EntriPanggilanTerurai {
+  nama: string;
+  kueri?: string;
+  url?: string;
+  fakta?: string;
+  kategori?: string;
+  id?: string;
+}
+
+interface KonteksPenggunaAi {
+  idPenggunaUnik?: string;
+  namaPengguna?: string;
+}
+
+function ekstrakPanggilanAlat(pesanPilihan: any): EntriPanggilanTerurai | null {
+  if (Array.isArray(pesanPilihan?.tool_calls) && pesanPilihan.tool_calls.length > 0) {
+    const p = pesanPilihan.tool_calls[0];
+    if (p?.function?.name === "cari_web") {
+      try {
+        const argumen = JSON.parse(p.function.arguments || "{}");
+        const kueri = argumen.kueri || argumen.query || "";
+        if (kueri) {
+          return { nama: "cari_web", kueri: String(kueri).trim(), id: p.id };
+        }
+      } catch {}
+    }
+    if (p?.function?.name === "baca_web") {
+      try {
+        const argumen = JSON.parse(p.function.arguments || "{}");
+        const url = argumen.url || argumen.tautan || "";
+        if (url) {
+          return { nama: "baca_web", url: String(url).trim(), id: p.id };
+        }
+      } catch {}
+    }
+    if (p?.function?.name === "ingat_fakta") {
+      try {
+        const argumen = JSON.parse(p.function.arguments || "{}");
+        const fakta = argumen.fakta || "";
+        const kategori = argumen.kategori || "umum";
+        if (fakta) {
+          return {
+            nama: "ingat_fakta",
+            fakta: String(fakta).trim(),
+            kategori: String(kategori).trim(),
+            id: p.id,
+          };
+        }
+      } catch {}
+    }
+  }
+
+  const teks = typeof pesanPilihan?.content === "string" ? pesanPilihan.content : "";
+  if (!teks) return null;
+
+  const dsmlCocok = teks.match(
+    /<｜DSML｜\s*invoke\s+name=["']([^"']+)["']>([\s\S]*?)<\/｜DSML｜\s*invoke>/i
+  );
+  if (dsmlCocok) {
+    const nama = dsmlCocok[1];
+    const isi = dsmlCocok[2];
+    const paramKueri = isi.match(
+      /<｜DSML｜\s*parameter\s+name=["'](?:kueri|query)["'][^>]*>([\s\S]*?)<\/｜DSML｜\s*parameter>/i
+    );
+    const paramUrl = isi.match(
+      /<｜DSML｜\s*parameter\s+name=["'](?:url|tautan)["'][^>]*>([\s\S]*?)<\/｜DSML｜\s*parameter>/i
+    );
+    const paramFakta = isi.match(
+      /<｜DSML｜\s*parameter\s+name=["']fakta["'][^>]*>([\s\S]*?)<\/｜DSML｜\s*parameter>/i
+    );
+    const paramKategori = isi.match(
+      /<｜DSML｜\s*parameter\s+name=["']kategori["'][^>]*>([\s\S]*?)<\/｜DSML｜\s*parameter>/i
+    );
+
+    if (nama === "cari_web" && paramKueri) {
+      return { nama, kueri: paramKueri[1].trim() };
+    }
+    if (nama === "baca_web" && paramUrl) {
+      return { nama, url: paramUrl[1].trim() };
+    }
+    if (nama === "ingat_fakta" && paramFakta) {
+      return {
+        nama,
+        fakta: paramFakta[1].trim(),
+        kategori: paramKategori ? paramKategori[1].trim() : "umum",
+      };
+    }
+  }
+
+  const toolCallCocok = teks.match(/<tool_call>([\s\S]*?)<\/tool_call>/i);
+  if (toolCallCocok) {
+    try {
+      const data = JSON.parse(toolCallCocok[1].trim());
+      const nama = data.name || (data.arguments?.url ? "baca_web" : data.arguments?.fakta ? "ingat_fakta" : "cari_web");
+      const kueri = data.arguments?.kueri || data.arguments?.query || data.kueri || data.query || "";
+      const url = data.arguments?.url || data.arguments?.tautan || data.url || data.tautan || "";
+      const fakta = data.arguments?.fakta || data.fakta || "";
+      const kategori = data.arguments?.kategori || data.kategori || "umum";
+
+      if (nama === "cari_web" && kueri) {
+        return { nama, kueri: String(kueri).trim() };
+      }
+      if (nama === "baca_web" && url) {
+        return { nama, url: String(url).trim() };
+      }
+      if (nama === "ingat_fakta" && fakta) {
+        return { nama, fakta: String(fakta).trim(), kategori: String(kategori).trim() };
+      }
+    } catch {}
+  }
+
+  const funcCocok = teks.match(/<function=([^>]+)>([\s\S]*?)<\/function>/i);
+  if (funcCocok) {
+    try {
+      const nama = funcCocok[1];
+      const data = JSON.parse(funcCocok[2].trim());
+      const kueri = data.kueri || data.query || "";
+      const url = data.url || data.tautan || "";
+      const fakta = data.fakta || "";
+      const kategori = data.kategori || "umum";
+
+      if (nama === "cari_web" && kueri) {
+        return { nama, kueri: String(kueri).trim() };
+      }
+      if (nama === "baca_web" && url) {
+        return { nama, url: String(url).trim() };
+      }
+      if (nama === "ingat_fakta" && fakta) {
+        return { nama, fakta: String(fakta).trim(), kategori: String(kategori).trim() };
+      }
+    } catch {}
+  }
+
+  return null;
+}
+
+function bersihkanTeksOutput(teks: string): string {
+  return teks
+    .replace(/<｜DSML｜\s*calls>[\s\S]*?<\/｜DSML｜\s*calls>/gi, "")
+    .replace(/<｜DSML｜\s*invoke[\s\S]*?<\/｜DSML｜\s*invoke>/gi, "")
+    .replace(/<｜DSML｜[\s\S]*?$/gi, "")
+    .replace(/<\/?[｜|][^>]*[｜|]>/gi, "")
+    .replace(/<think>[\s\S]*?<\/think>/gi, "")
+    .replace(/<tool_call>[\s\S]*?<\/tool_call>/gi, "")
+    .replace(/<function=[^>]+>[\s\S]*?<\/function>/gi, "")
+    .replace(/<｜[^>]+｜>/gi, "")
+    .trim();
 }
 
 const PROMPT_SISTEM_ANYA =
@@ -44,14 +208,16 @@ const PROMPT_SISTEM_ANYA =
   "3. DILARANG menggunakan kalimat penutup klise khas chatbot AI seperti 'Semoga membantu!', 'Semoga berhasil, Kakak!', 'Ada yang ingin ditanyakan lagi?', dsb. Akhiri balasan secara wajar dan spontan.\n" +
   "4. Gunakan tanda baca standar (titik, koma, tanda kurung). Dilarang memakai tanda strip panjang em-dash (—).\n" +
   "5. Dalam percakapan grup, kamu mengenali siapa yang berbicara dari label [Nama (+Nomor)]. Ingat konteks obrolan sebelumnya agar nyambung.\n" +
-  "6. Kamu memiliki alat bantu 'cari_web' untuk mencari berita atau informasi terbaru di internet bila pengguna menanyakan data teranyar.";
+  "6. Kamu memiliki alat bantu 'cari_web' untuk mencari berita atau informasi terbaru di internet, serta 'baca_web' untuk membuka dan membaca isi lengkap suatu tautan web (URL).\n" +
+  "7. PENTING - ATURAN PENCARIAN WEB: Jika pengguna menanyakan tentang suatu software, bahasa pemrograman, library, proyek GitHub, tutorial, atau cara install yang terdengar spesifik, baru, atau belum kamu ketahui dengan pasti, DILARANG MENEBAK BAHWA ITU TIDAK ADA ATAU FIKTIF! Kamu WAJIB memanggil alat 'cari_web' terlebih dahulu untuk mencari informasi dan dokumentasi aslinya di internet.\n" +
+  "8. PENTING - MEMORI PROFIL: Jika lawan bicara memberitahukan informasi penting tentang dirinya (seperti nama, pekerjaan, hobi, teknologi yang dipakai, preferensi, dsb.), panggil alat 'ingat_fakta' agar kamu mengingatnya selamanya.";
 
 const SKEMA_ALAT_PENCARIAN_WEB = {
   type: "function" as const,
   function: {
     name: "cari_web",
     description:
-      "Mencari informasi atau berita terbaru di internet bila pengguna menanyakan kabar terkini, fakta terbaru, cuaca, harga, atau data yang membutuhkan pencarian web.",
+      "Mencari informasi terkini, tutorial, panduan instalasi, proyek GitHub, dokumentasi teknologi, atau berita terbaru di internet.",
     parameters: {
       type: "object",
       properties: {
@@ -65,6 +231,48 @@ const SKEMA_ALAT_PENCARIAN_WEB = {
   },
 };
 
+const SKEMA_ALAT_BACA_WEB = {
+  type: "function" as const,
+  function: {
+    name: "baca_web",
+    description:
+      "Membuka dan membaca isi teks lengkap dari sebuah tautan web (URL) spesifik bila pengguna meminta membaca situs atau tautan artikel.",
+    parameters: {
+      type: "object",
+      properties: {
+        url: {
+          type: "string",
+          description: "Alamat URL halaman web yang ingin dibaca kontennya",
+        },
+      },
+      required: ["url"],
+    },
+  },
+};
+
+const SKEMA_ALAT_INGAT_FAKTA = {
+  type: "function" as const,
+  function: {
+    name: "ingat_fakta",
+    description:
+      "Menyimpan informasi, profil, preferensi, kebiasaan, atau fakta penting tentang lawan bicara ke memori permanen jangka panjang.",
+    parameters: {
+      type: "object",
+      properties: {
+        fakta: {
+          type: "string",
+          description: "Pernyataan fakta penting tentang lawan bicara (contoh: 'Pengguna memakai Arch Linux', 'Pengguna suka coding Go')",
+        },
+        kategori: {
+          type: "string",
+          description: "Kategori fakta, contoh: identitas, teknologi, preferensi, hobi",
+        },
+      },
+      required: ["fakta"],
+    },
+  },
+};
+
 export class LayananAi {
   constructor(private readonly konfigurasi: KonfigurasiEnv = konfigurasiEnv) {}
 
@@ -73,11 +281,12 @@ export class LayananAi {
     apiKey: string,
     model: string,
     pesan: PesanAi[],
-    izinkanAlat = true
+    izinkanAlat = true,
+    konteksPengguna?: KonteksPenggunaAi
   ): Promise<string> {
     const endpoint = `${baseUrl.replace(/\/+$/, "")}/chat/completions`;
     const pengontrol = new AbortController();
-    const batasWaktu = setTimeout(() => pengontrol.abort(), 20000);
+    const batasWaktu = setTimeout(() => pengontrol.abort(), 25000);
 
     const bodyPermintaan: any = {
       model,
@@ -87,7 +296,11 @@ export class LayananAi {
     };
 
     if (izinkanAlat) {
-      bodyPermintaan.tools = [SKEMA_ALAT_PENCARIAN_WEB];
+      bodyPermintaan.tools = [
+        SKEMA_ALAT_PENCARIAN_WEB,
+        SKEMA_ALAT_BACA_WEB,
+        SKEMA_ALAT_INGAT_FAKTA,
+      ];
       bodyPermintaan.tool_choice = "auto";
     }
 
@@ -114,56 +327,178 @@ export class LayananAi {
         throw new Error("Respon pilihan AI kosong");
       }
 
-      if (
-        izinkanAlat &&
-        Array.isArray(pesanPilihan.tool_calls) &&
-        pesanPilihan.tool_calls.length > 0
-      ) {
-        const panggilan = pesanPilihan.tool_calls[0];
-        if (panggilan?.function?.name === "cari_web") {
-          let kueriPencarian = "";
-          try {
-            const argumen = JSON.parse(panggilan.function.arguments || "{}");
-            kueriPencarian = argumen.kueri || argumen.query || "";
-          } catch {
-            kueriPencarian = "";
-          }
+      const panggilan = izinkanAlat ? ekstrakPanggilanAlat(pesanPilihan) : null;
 
-          if (kueriPencarian) {
-            pencatat.info({ kueri: kueriPencarian }, "Menjalankan pencarian web untuk AI Anya");
-            const hasilCari = await cariWeb(kueriPencarian);
+      if (panggilan && panggilan.nama === "cari_web" && panggilan.kueri) {
+        pencatat.info({ kueri: panggilan.kueri }, "Menjalankan pencarian web canggih untuk AI Anya");
+        const hasilCari = await cariWeb(panggilan.kueri);
 
-            const pesanLanjutan: PesanAi[] = [
-              ...pesan,
-              {
-                role: "assistant",
-                content: pesanPilihan.content ?? "",
-                tool_calls: [panggilan],
-              },
-              {
-                role: "tool",
-                tool_call_id: panggilan.id,
-                content: JSON.stringify(hasilCari),
-              },
-            ];
+        let pesanLanjutan: PesanAi[];
 
-            return await this.kirimPermintaan(
-              baseUrl,
-              apiKey,
-              model,
-              pesanLanjutan,
-              false
-            );
-          }
+        if (panggilan.id && Array.isArray(pesanPilihan.tool_calls) && pesanPilihan.tool_calls.length > 0) {
+          pesanLanjutan = [
+            ...pesan,
+            {
+              role: "assistant",
+              content: pesanPilihan.content ?? "",
+              tool_calls: pesanPilihan.tool_calls,
+            },
+            {
+              role: "tool",
+              tool_call_id: panggilan.id,
+              content: JSON.stringify(hasilCari),
+            },
+          ];
+        } else {
+          const konteksCariTeks =
+            hasilCari.length > 0
+              ? hasilCari
+                  .map((h, idx) => {
+                    let blok = `${idx + 1}. ${h.judul}\nRingkasan: ${h.ringkasan}`;
+                    if (h.konten) blok += `\nDetail: ${h.konten}`;
+                    if (h.tautan) blok += `\nSumber: ${h.tautan}`;
+                    return blok;
+                  })
+                  .join("\n\n")
+              : "Tidak ada informasi spesifik yang ditemukan di web untuk kata kunci tersebut.";
+
+          pesanLanjutan = [
+            ...pesan,
+            {
+              role: "assistant",
+              content: "Mencari informasi terkini di web...",
+            },
+            {
+              role: "user",
+              content: `[Hasil pencarian web terkini untuk "${panggilan.kueri}"]:\n${konteksCariTeks}\n\nBerdasarkan hasil pencarian di atas, jawablah pertanyaan pengguna dengan gaya Anya Forger yang cerdas, tepat sasaran, dan mengalir santai.`,
+            },
+          ];
         }
+
+        const balasanFinal = await this.kirimPermintaan(
+          baseUrl,
+          apiKey,
+          model,
+          pesanLanjutan,
+          false,
+          konteksPengguna
+        );
+
+        return bersihkanTeksOutput(balasanFinal);
       }
 
-      const konten = pesanPilihan.content;
-      if (typeof konten !== "string" || !konten.trim()) {
+      if (panggilan && panggilan.nama === "baca_web" && panggilan.url) {
+        pencatat.info({ url: panggilan.url }, "Membuka dan membaca halaman web untuk AI Anya");
+        const isiWeb = await bacaHalamanWeb(panggilan.url, 7000);
+
+        let pesanLanjutan: PesanAi[];
+
+        if (panggilan.id && Array.isArray(pesanPilihan.tool_calls) && pesanPilihan.tool_calls.length > 0) {
+          pesanLanjutan = [
+            ...pesan,
+            {
+              role: "assistant",
+              content: pesanPilihan.content ?? "",
+              tool_calls: pesanPilihan.tool_calls,
+            },
+            {
+              role: "tool",
+              tool_call_id: panggilan.id,
+              content: JSON.stringify({ url: panggilan.url, isi: isiWeb || "Halaman tidak dapat diakses atau kosong" }),
+            },
+          ];
+        } else {
+          const konteksTeks = isiWeb
+            ? `[Konten lengkap dari tautan ${panggilan.url}]:\n${isiWeb}`
+            : `[Tautan ${panggilan.url} tidak dapat diakses atau halamannya kosong]`;
+
+          pesanLanjutan = [
+            ...pesan,
+            {
+              role: "assistant",
+              content: "Membuka dan membaca halaman web...",
+            },
+            {
+              role: "user",
+              content: `${konteksTeks}\n\nBerdasarkan isi halaman web di atas, jawablah pertanyaan pengguna dengan gaya Anya Forger yang cerdas, tepat sasaran, dan mengalir santai.`,
+            },
+          ];
+        }
+
+        const balasanFinal = await this.kirimPermintaan(
+          baseUrl,
+          apiKey,
+          model,
+          pesanLanjutan,
+          false,
+          konteksPengguna
+        );
+
+        return bersihkanTeksOutput(balasanFinal);
+      }
+
+      if (panggilan && panggilan.nama === "ingat_fakta" && panggilan.fakta) {
+        pencatat.info(
+          { fakta: panggilan.fakta, kategori: panggilan.kategori },
+          "Menyimpan fakta pengguna ke memori AI"
+        );
+        if (konteksPengguna?.idPenggunaUnik) {
+          repositoriMemoriAi.simpanFakta(
+            konteksPengguna.idPenggunaUnik,
+            konteksPengguna.namaPengguna || "Pengguna",
+            panggilan.fakta,
+            panggilan.kategori || "umum"
+          );
+        }
+
+        let pesanLanjutan: PesanAi[];
+
+        if (panggilan.id && Array.isArray(pesanPilihan.tool_calls) && pesanPilihan.tool_calls.length > 0) {
+          pesanLanjutan = [
+            ...pesan,
+            {
+              role: "assistant",
+              content: pesanPilihan.content ?? "",
+              tool_calls: pesanPilihan.tool_calls,
+            },
+            {
+              role: "tool",
+              tool_call_id: panggilan.id,
+              content: JSON.stringify({ sukses: true, pesan: "Fakta berhasil disimpan ke memori jangka panjang." }),
+            },
+          ];
+        } else {
+          pesanLanjutan = [
+            ...pesan,
+            {
+              role: "assistant",
+              content: "Mencatat memori...",
+            },
+            {
+              role: "user",
+              content: `[Sistem: Fakta "${panggilan.fakta}" berhasil dicatat ke memori permanen]. Lanjutkan obrolan santai dan ramah khas Anya.`,
+            },
+          ];
+        }
+
+        const balasanFinal = await this.kirimPermintaan(
+          baseUrl,
+          apiKey,
+          model,
+          pesanLanjutan,
+          false,
+          konteksPengguna
+        );
+
+        return bersihkanTeksOutput(balasanFinal);
+      }
+
+      const konten = bersihkanTeksOutput(pesanPilihan.content || "");
+      if (!konten) {
         throw new Error("Konten balasan AI kosong");
       }
 
-      return konten.trim();
+      return konten;
     } finally {
       clearTimeout(batasWaktu);
     }
@@ -177,8 +512,9 @@ export class LayananAi {
   ): Promise<string> {
     const adalahGrup = opsiKonteks?.adalahGrup ?? idObrolan.endsWith("@g.us");
     const idPenggunaMentah = opsiKonteks?.idPengguna || (adalahGrup ? "" : idObrolan);
-    const nomorPengguna = idPenggunaMentah.replace(/[^0-9]/g, "");
+    const nomorPengguna = (idPenggunaMentah.split("@")[0]?.split(":")[0] || idPenggunaMentah).trim();
     const namaPanggilan = namaPengirim?.trim() || "Kakak";
+    const idPenggunaUnik = nomorPengguna || idPenggunaMentah;
 
     const idSesi = adalahGrup
       ? idObrolan
@@ -186,6 +522,18 @@ export class LayananAi {
     const tipeObrolan: "grup" | "pribadi" = adalahGrup ? "grup" : "pribadi";
 
     const kueriKecil = pesanPengguna.toLowerCase().trim();
+    if (
+      kueriKecil === "!ai reset profil" ||
+      kueriKecil === "reset profil" ||
+      kueriKecil === "lupa tentang aku" ||
+      kueriKecil === "hapus profil"
+    ) {
+      if (idPenggunaUnik) {
+        repositoriMemoriAi.hapusFaktaPengguna(idPenggunaUnik);
+      }
+      return "Heh! Seluruh memori profil permanen tentang Kakak sudah Anya bersihkan ya. Sekarang Anya kenalan dari awal lagi, waku waku!";
+    }
+
     if (
       kueriKecil === "reset" ||
       kueriKecil === "lupa" ||
@@ -197,9 +545,23 @@ export class LayananAi {
     }
 
     const riwayatTersimpan = repositoriMemoriAi.ambilRiwayat(idSesi, 16);
+    const faktaPengguna = idPenggunaUnik
+      ? repositoriMemoriAi.ambilFaktaPengguna(idPenggunaUnik, 8)
+      : [];
+
     const pesanUntukModel: PesanAi[] = [
       { role: "system", content: PROMPT_SISTEM_ANYA },
     ];
+
+    if (faktaPengguna.length > 0) {
+      const teksFakta = faktaPengguna
+        .map((f) => `- [${f.kategori}]: ${f.fakta}`)
+        .join("\n");
+      pesanUntukModel.push({
+        role: "system",
+        content: `[MEMORI PERMANEN TENTANG ${namaPanggilan}]:\n${teksFakta}\n\nIngat informasi di atas dan gunakan secara alami dalam percakapan bila relevan.`,
+      });
+    }
 
     for (const entri of riwayatTersimpan) {
       if (entri.peran === "assistant") {
@@ -217,7 +579,27 @@ export class LayananAi {
       ? `[${namaPanggilan} (+${nomorPengguna})]: ${pesanPengguna}`
       : `[${namaPanggilan}]: ${pesanPengguna}`;
 
-    pesanUntukModel.push({ role: "user", content: labelUserSekarang });
+    let kontenUserSekarang: KontenPesanAi = labelUserSekarang;
+
+    if (opsiKonteks?.gambarBase64 && opsiKonteks.gambarBase64.length > 0) {
+      const bagian: (BagianKontenTeks | BagianKontenGambar)[] = [
+        { type: "text", text: labelUserSekarang },
+      ];
+      for (const g of opsiKonteks.gambarBase64) {
+        bagian.push({
+          type: "image_url",
+          image_url: { url: g },
+        });
+      }
+      kontenUserSekarang = bagian;
+    }
+
+    pesanUntukModel.push({ role: "user", content: kontenUserSekarang });
+
+    const konteksPengguna: KonteksPenggunaAi = {
+      idPenggunaUnik,
+      namaPengguna: namaPanggilan,
+    };
 
     let jawaban = "";
 
@@ -227,7 +609,9 @@ export class LayananAi {
           this.konfigurasi.aiBaseUrl,
           this.konfigurasi.aiApiKey,
           this.konfigurasi.aiModel,
-          pesanUntukModel
+          pesanUntukModel,
+          true,
+          konteksPengguna
         );
       } catch (kesalahanUtama) {
         pencatat.warn(
@@ -243,7 +627,9 @@ export class LayananAi {
           this.konfigurasi.aiFallbackBaseUrl,
           this.konfigurasi.aiFallbackApiKey,
           this.konfigurasi.aiFallbackModel,
-          pesanUntukModel
+          pesanUntukModel,
+          true,
+          konteksPengguna
         );
       } catch (kesalahanCadangan) {
         pencatat.error(

@@ -7,6 +7,8 @@ import { buatPencatat } from "../utils/logger.js";
 import type { KonfigurasiEnv } from "../config/env.js";
 import { pembatasFrekuensi } from "./rate-limiter.js";
 import { layananAi } from "../services/ai/ai-service.js";
+import { bacaDokumenLampiran } from "../services/ai/tools/document-reader.js";
+import { transkripsikanPesanSuara } from "../services/ai/tools/audio-transcriber.js";
 
 const pencatat = buatPencatat("PerutePerintah");
 
@@ -31,9 +33,10 @@ export class PerutePerintah {
   }
 
   public async prosesPesan(soket: WASocket, pesan: WAMessage): Promise<void> {
-    const teks = this.ekstrakTeksPesan(pesan);
-    if (!teks) return;
+    const isiPesan = pesan.message;
+    if (!isiPesan) return;
 
+    let teks = this.ekstrakTeksPesan(pesan);
     const idObrolan = pesan.key.remoteJid ?? "";
     const adalahGrup = idObrolan.endsWith("@g.us");
     const idPengirim = adalahGrup
@@ -47,7 +50,7 @@ export class PerutePerintah {
       if (!this.konfigurasi.aiAktif) return;
 
       const botJid = soket.user?.id ? soket.user.id.split(":")[0] + "@s.whatsapp.net" : "";
-      const infoKonteks = pesan.message?.extendedTextMessage?.contextInfo;
+      const infoKonteks = isiPesan.extendedTextMessage?.contextInfo;
       const disebutDalamPesan = Boolean(botJid && infoKonteks?.mentionedJid?.includes(botJid));
       const membalasPesanBot = Boolean(
         botJid &&
@@ -56,22 +59,85 @@ export class PerutePerintah {
       );
       const diawaliKataAnya = /^anya\b[\s,.:!?]*/i.test(teks);
 
+      const pesanKutipan = infoKonteks?.quotedMessage;
+      const adaAudio = Boolean(isiPesan.audioMessage || pesanKutipan?.audioMessage);
+      const adaGambar = Boolean(isiPesan.imageMessage || pesanKutipan?.imageMessage);
+      const adaDokumen = Boolean(isiPesan.documentMessage || pesanKutipan?.documentMessage);
+
       const pemicuAi = adalahGrup
         ? diawaliKataAnya || disebutDalamPesan || membalasPesanBot
-        : diawaliKataAnya || true;
+        : diawaliKataAnya || adaAudio || adaGambar || adaDokumen || true;
 
       if (!pemicuAi) return;
+
+      const batas = pembatasFrekuensi.periksaBatas(idPengirim, 5, 10000);
+      if (!batas.diizinkan) return;
 
       let prompt = teks;
       if (diawaliKataAnya) {
         prompt = teks.replace(/^anya\b[\s,.:!?]*/i, "").trim();
       }
+
+      let gambarBase64: string[] | undefined;
+
+      if (adaAudio) {
+        try {
+          if (typeof soket.sendPresenceUpdate === "function") {
+            await soket.sendPresenceUpdate("recording", idObrolan).catch(() => {});
+          }
+          const bufferAudio = await unduhMediaPesan(pesan, soket);
+          if (bufferAudio) {
+            const transkripsi = await transkripsikanPesanSuara(bufferAudio);
+            if (transkripsi) {
+              prompt = transkripsi;
+            }
+          }
+        } catch (err) {
+          pencatat.warn({ err }, "Gagal mentranskripsi pesan suara pengguna");
+        }
+      }
+
+      if (adaGambar) {
+        try {
+          const bufferMedia = await unduhMediaPesan(pesan, soket);
+          if (bufferMedia) {
+            const mime =
+              isiPesan.imageMessage?.mimetype ||
+              pesanKutipan?.imageMessage?.mimetype ||
+              "image/jpeg";
+            gambarBase64 = [`data:${mime};base64,${bufferMedia.toString("base64")}`];
+            if (!prompt) {
+              prompt = "Jelaskan atau baca apa yang ada di dalam gambar ini";
+            }
+          }
+        } catch (err) {
+          pencatat.warn({ err }, "Gagal mengunduh gambar untuk analisis AI");
+        }
+      } else if (adaDokumen) {
+        try {
+          const bufferMedia = await unduhMediaPesan(pesan, soket);
+          if (bufferMedia) {
+            const namaBerkas =
+              isiPesan.documentMessage?.fileName ||
+              pesanKutipan?.documentMessage?.fileName ||
+              "dokumen";
+            const mime =
+              isiPesan.documentMessage?.mimetype ||
+              pesanKutipan?.documentMessage?.mimetype ||
+              "";
+            const teksDokumen = await bacaDokumenLampiran(bufferMedia, namaBerkas, mime);
+            if (teksDokumen) {
+              prompt = `[Isi Dokumen "${namaBerkas}"]:\n${teksDokumen}\n\n${prompt || "Tolong baca dan analisis isi berkas dokumen di atas."}`;
+            }
+          }
+        } catch (err) {
+          pencatat.warn({ err }, "Gagal membaca berkas dokumen untuk AI");
+        }
+      }
+
       if (!prompt) {
         prompt = "Halo Anya";
       }
-
-      const batas = pembatasFrekuensi.periksaBatas(idPengirim, 5, 10000);
-      if (!batas.diizinkan) return;
 
       try {
         if (typeof soket.sendPresenceUpdate === "function") {
@@ -84,6 +150,7 @@ export class PerutePerintah {
           {
             adalahGrup,
             idPengguna: idPengirim,
+            gambarBase64,
           }
         );
         await soket.sendMessage(idObrolan, { text: balasanAi }, { quoted: pesan });
