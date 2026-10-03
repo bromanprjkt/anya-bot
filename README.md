@@ -6,7 +6,7 @@
 
 Bot WhatsApp berbasis TypeScript dan Baileys dengan kecerdasan buatan multimodal, stiker, downloader media (TikTok & Instagram), moderasi, dan manajemen grup.
 
-**Versi:** 0.3
+**Versi:** 0.4
 
 ---
 
