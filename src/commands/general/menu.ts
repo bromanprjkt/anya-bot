@@ -1,3 +1,6 @@
+import fs from "node:fs";
+import path from "node:path";
+import sharp from "sharp";
 import type { PerintahBot, RegistriPerintah, KategoriPerintah } from "../../core/command-registry.js";
 import type { KonteksPerintah } from "../../core/message-context.js";
 import { periksaIzinPerintah } from "../../core/permissions.js";
@@ -5,15 +8,28 @@ import { konfigurasiEnv } from "../../config/env.js";
 
 const URL_BANNER =
   "https://raw.githubusercontent.com/bromanprjkt/anya-bot/refs/heads/main/banner.png";
+const JALUR_BANNER_LOKAL = path.resolve(process.cwd(), "banner.png");
 
 let bufferBannerMemori: Buffer | null = null;
 
 async function ambilBufferBanner(): Promise<Buffer | undefined> {
   if (bufferBannerMemori) return bufferBannerMemori;
   try {
-    const respon = await fetch(URL_BANNER);
-    if (respon.ok) {
-      bufferBannerMemori = Buffer.from(await respon.arrayBuffer());
+    let bufferMentah: Buffer | null = null;
+    if (fs.existsSync(JALUR_BANNER_LOKAL)) {
+      bufferMentah = fs.readFileSync(JALUR_BANNER_LOKAL);
+    } else {
+      const respon = await fetch(URL_BANNER);
+      if (respon.ok) {
+        bufferMentah = Buffer.from(await respon.arrayBuffer());
+      }
+    }
+
+    if (bufferMentah) {
+      bufferBannerMemori = await sharp(bufferMentah)
+        .resize(300, 168, { fit: "cover" })
+        .jpeg({ quality: 65 })
+        .toBuffer();
       return bufferBannerMemori;
     }
   } catch {

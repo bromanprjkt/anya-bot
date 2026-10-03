@@ -60,10 +60,6 @@ interface KonteksPenggunaAi {
   namaPengguna?: string;
 }
 
-function lepaskanKarakterRegExp(teks: string): string {
-  return teks.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
 function ekstrakPanggilanAlat(pesanPilihan: any): EntriPanggilanTerurai | null {
   if (Array.isArray(pesanPilihan?.tool_calls) && pesanPilihan.tool_calls.length > 0) {
     const p = pesanPilihan.tool_calls[0];
@@ -216,7 +212,7 @@ const PROMPT_SISTEM_ANYA =
   "2. Sampaikan solusi secara mengalir dalam kalimat santai tanpa bertele-tele.\n" +
   "3. DILARANG menggunakan kalimat penutup klise khas chatbot AI seperti 'Semoga membantu!', 'Semoga berhasil, Kakak!', 'Ada yang ingin ditanyakan lagi?', dsb. Akhiri balasan secara wajar dan spontan.\n" +
   "4. Gunakan tanda baca standar (titik, koma, tanda kurung). Dilarang memakai tanda strip panjang em-dash (—).\n" +
-  "5. PENTING - ATURAN MENYEBUT PENGGUNA DI GRUP: Dalam percakapan grup, identitas peserta berformat [@<nomor> (nama: <Nama>)]. Jika kamu ingin menyapa, memanggil, atau menyebut pengguna di grup, DILARANG menuliskan nama teksnya secara langsung (jangan tulis 'Halo Budi' atau 'Kak Budi'). Kamu WAJIB menyapa atau menyebutnya dengan tag WhatsApp format @<nomor> (contoh: '@6281234567890') agar pengguna tersebut tertag langsung di WhatsApp! Pada chat pribadi (bukan grup), kamu boleh memanggil nama atau Kakak secara normal.\n" +
+  "5. ATURAN MEMANGGIL LAWAN BICARA: Panggil lawan bicara dengan nama asli atau nama panggilan mereka (contoh: 'Kak <Nama>' atau langsung nama mereka). DILARANG KERAS memanggil atau menyapa pengguna dengan deretan angka ID, nomor telepon, atau format '@<nomor>' (seperti @123456...)! Selalu gunakan nama panggilan mereka secara alami agar percakapan terasa akrab dan hangat.\n" +
   "6. Kamu memiliki alat bantu 'cari_web' untuk mencari berita atau informasi terbaru di internet, serta 'baca_web' untuk membuka dan membaca isi lengkap suatu tautan web (URL).\n" +
   "7. PENTING - ATURAN PENCARIAN WEB: Jika pengguna menanyakan tentang suatu software, bahasa pemrograman, library, proyek GitHub, tutorial, atau cara install yang terdengar spesifik, baru, atau belum kamu ketahui dengan pasti, DILARANG MENEBAK BAHWA ITU TIDAK ADA ATAU FIKTIF! Kamu WAJIB memanggil alat 'cari_web' terlebih dahulu untuk mencari informasi dan dokumentasi aslinya di internet.\n" +
   "8. PENTING - MEMORI PROFIL: Jika lawan bicara memberitahukan informasi penting tentang dirinya (seperti nama, pekerjaan, hobi, teknologi yang dipakai, preferensi, dsb.), panggil alat 'ingat_fakta' agar kamu mengingatnya selamanya.\n" +
@@ -672,21 +668,14 @@ export class LayananAi {
       if (entri.peran === "assistant") {
         pesanUntukModel.push({ role: "assistant", content: entri.konten });
       } else {
-        const label =
-          entri.tipeObrolan === "grup"
-            ? `[@${entri.idPengguna.replace(/[^0-9]/g, "")} (nama: ${entri.namaPengguna})]: ${entri.konten}`
-            : `[${entri.namaPengguna}]: ${entri.konten}`;
+        const label = `[${entri.namaPengguna}]: ${entri.konten}`;
         pesanUntukModel.push({ role: "user", content: label });
       }
     }
 
-    const labelUserSekarang = adalahGrup
-      ? (adalahPemilik
-          ? `[@${nomorPengguna} (Bos Owner: bromanprjkt)]: ${pesanPengguna}`
-          : `[@${nomorPengguna} (nama: ${namaPanggilan})]: ${pesanPengguna}`)
-      : (adalahPemilik
-          ? `[Bos Owner (bromanprjkt)]: ${pesanPengguna}`
-          : `[${namaPanggilan}]: ${pesanPengguna}`);
+    const labelUserSekarang = adalahPemilik
+      ? `[Bos Owner (bromanprjkt)]: ${pesanPengguna}`
+      : `[${namaPanggilan}]: ${pesanPengguna}`;
 
     let kontenUserSekarang: KontenPesanAi = labelUserSekarang;
 
@@ -761,20 +750,6 @@ export class LayananAi {
 
     if (!jawaban) {
       return "Maaf Kak, kepala Anya lagi pusing mikirnya... Coba tanya lagi nanti ya, waku waku!";
-    }
-
-    if (adalahGrup && nomorPengguna) {
-      if (adalahPemilik) {
-        jawaban = jawaban.replace(/@(bromanprjkt)\b/gi, `@${nomorPengguna}`);
-      }
-      if (namaPanggilan && namaPanggilan !== "Kakak" && namaPanggilan.length >= 2) {
-        const polaNama = lepaskanKarakterRegExp(namaPanggilan);
-        jawaban = jawaban.replace(new RegExp(`@${polaNama}\\b`, "gi"), `@${nomorPengguna}`);
-        jawaban = jawaban.replace(
-          new RegExp(`\\b(Halo|Hai|Kak|Kakak|Hei|Heh)\\s+${polaNama}\\b`, "gi"),
-          `$1 @${nomorPengguna}`
-        );
-      }
     }
 
     repositoriMemoriAi.simpanPesan(
