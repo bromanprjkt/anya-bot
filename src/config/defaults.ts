@@ -11,7 +11,7 @@ function ambilVersiDariPackage(): string {
       }
     }
   } catch {}
-  return "0.3";
+  return "0.4";
 }
 
 export const KONFIGURASI_BAWAAN = {
