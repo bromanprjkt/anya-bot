@@ -56,45 +56,64 @@ function sisipkanExifKeWebp(
     return bufferWebp;
   }
 
-  const chunkFourCC = bufferWebp.toString("ascii", 12, 16);
+  const kumpulanChunk: Buffer[] = [];
+  let posisi = 12;
+  let adaVp8x = false;
+
+  while (posisi < bufferWebp.length) {
+    if (posisi + 8 > bufferWebp.length) break;
+    const fourCC = bufferWebp.toString("ascii", posisi, posisi + 4);
+    const ukuranChunk = bufferWebp.readUInt32LE(posisi + 4);
+    const panjangTotalChunk = 8 + ukuranChunk + (ukuranChunk % 2);
+
+    if (fourCC === "VP8X") {
+      adaVp8x = true;
+    }
+
+    if (fourCC !== "EXIF") {
+      kumpulanChunk.push(
+        bufferWebp.subarray(posisi, Math.min(posisi + panjangTotalChunk, bufferWebp.length))
+      );
+    }
+    posisi += panjangTotalChunk;
+  }
+
   const panjangExif = bufferExif.length;
   const chunkExif = Buffer.alloc(8 + panjangExif + (panjangExif % 2));
   chunkExif.write("EXIF", 0, 4, "ascii");
   chunkExif.writeUInt32LE(panjangExif, 4);
   bufferExif.copy(chunkExif, 8);
+  kumpulanChunk.push(chunkExif);
 
-  if (chunkFourCC === "VP8X") {
-    const salinan = Buffer.from(bufferWebp);
-    salinan[20] = (salinan[20] ?? 0) | 0x08;
-    const hasilAkhir = Buffer.concat([salinan, chunkExif]);
-    hasilAkhir.writeUInt32LE(hasilAkhir.length - 8, 4);
-    return hasilAkhir;
+  const tajukRiff = Buffer.alloc(12);
+  tajukRiff.write("RIFF", 0, 4, "ascii");
+  tajukRiff.write("WEBP", 8, 4, "ascii");
+
+  let badan = Buffer.concat(kumpulanChunk);
+
+  if (adaVp8x) {
+    badan[8] = (badan[8] ?? 0) | 0x08;
+  } else {
+    const chunkVp8x = Buffer.alloc(18);
+    chunkVp8x.write("VP8X", 0, 4, "ascii");
+    chunkVp8x.writeUInt32LE(10, 4);
+    chunkVp8x[8] = 0x08;
+    const l = lebar - 1;
+    chunkVp8x[12] = l & 0xff;
+    chunkVp8x[13] = (l >> 8) & 0xff;
+    chunkVp8x[14] = (l >> 16) & 0xff;
+    const t = tinggi - 1;
+    chunkVp8x[15] = t & 0xff;
+    chunkVp8x[16] = (t >> 8) & 0xff;
+    chunkVp8x[17] = (t >> 16) & 0xff;
+    badan = Buffer.concat([chunkVp8x, badan]);
   }
 
-  const chunkVp8x = Buffer.alloc(18);
-  chunkVp8x.write("VP8X", 0, 4, "ascii");
-  chunkVp8x.writeUInt32LE(10, 4);
-  chunkVp8x[8] = 0x08; 
-
-  const l = lebar - 1;
-  chunkVp8x[12] = l & 0xff;
-  chunkVp8x[13] = (l >> 8) & 0xff;
-  chunkVp8x[14] = (l >> 16) & 0xff;
-
-  const t = tinggi - 1;
-  chunkVp8x[15] = t & 0xff;
-  chunkVp8x[16] = (t >> 8) & 0xff;
-  chunkVp8x[17] = (t >> 16) & 0xff;
-
-  const headerRiff = Buffer.alloc(12);
-  headerRiff.write("RIFF", 0, 4, "ascii");
-  headerRiff.write("WEBP", 8, 4, "ascii");
-
-  const sisaChunks = bufferWebp.subarray(12);
-  const hasilAkhir = Buffer.concat([headerRiff, chunkVp8x, sisaChunks, chunkExif]);
+  const hasilAkhir = Buffer.concat([tajukRiff, badan]);
   hasilAkhir.writeUInt32LE(hasilAkhir.length - 8, 4);
   return hasilAkhir;
 }
+
 
 export class LayananStiker {
   public async gambarKeStiker(
@@ -127,29 +146,46 @@ export class LayananStiker {
 
         return await layananPenyimpananSementara.bungkusDenganPembersihan(
           async (jalurOutput) => {
-            await new Promise<void>((selesai, tolak) => {
-              ffmpeg(jalurInput)
-                .inputOptions(["-t 10"])
-                .outputOptions([
-                  "-vcodec libwebp",
-                  "-vf scale=512:512:force_original_aspect_ratio=decrease,fps=15,pad=512:512:(ow-iw)/2:(oh-ih)/2:color=white@0.0",
-                  "-loop 0",
-                  "-ss 00:00:00",
-                  "-t 00:00:09",
-                  "-preset default",
-                  "-an",
-                  "-vsync 0",
-                  "-s 512:512",
-                  "-quality 60",
-                  "-fs 1000k",
-                ])
-                .toFormat("webp")
-                .save(jalurOutput)
-                .on("end", () => selesai())
-                .on("error", (err) => tolak(err));
-            });
+            const jalankanKonversi = async (
+              durasiDetik: number,
+              fps: number,
+              kualitas: number,
+              batasUkuranKb: number
+            ): Promise<void> => {
+              const detikTeks = String(durasiDetik).padStart(2, "0");
+              await new Promise<void>((selesai, tolak) => {
+                ffmpeg(jalurInput)
+                  .inputOptions([`-t ${durasiDetik}`])
+                  .outputOptions([
+                    "-vcodec libwebp",
+                    `-vf scale=512:512:force_original_aspect_ratio=decrease,fps=${fps},pad=512:512:(ow-iw)/2:(oh-ih)/2:color=white@0.0`,
+                    "-loop 0",
+                    "-ss 00:00:00",
+                    `-t 00:00:${detikTeks}`,
+                    "-preset default",
+                    "-an",
+                    "-vsync 0",
+                    "-s 512:512",
+                    `-quality ${kualitas}`,
+                    `-fs ${batasUkuranKb}k`,
+                  ])
+                  .toFormat("webp")
+                  .save(jalurOutput)
+                  .on("end", () => selesai())
+                  .on("error", (err) => tolak(err));
+              });
+            };
 
-            const bufferHasil = await fs.readFile(jalurOutput);
+            await jalankanKonversi(10, 10, 40, 460);
+
+            let bufferHasil = await fs.readFile(jalurOutput);
+
+            if (bufferHasil.length > 470 * 1024) {
+              pencatat.warn("Ukuran stiker animasi melebihi batas aman, melakukan kompresi ulang");
+              await jalankanKonversi(7, 8, 30, 420);
+              bufferHasil = await fs.readFile(jalurOutput);
+            }
+
             const exif = buatBufferExif(metadata?.namaPaket, metadata?.pembuat);
             return sisipkanExifKeWebp(bufferHasil, exif);
           },

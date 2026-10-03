@@ -6,7 +6,7 @@
 
 Bot WhatsApp berbasis TypeScript dan Baileys dengan kecerdasan buatan multimodal, stiker, downloader media (TikTok & Instagram), moderasi, dan manajemen grup.
 
-**Versi:** 0.2.0
+**Versi:** 0.3
 
 ---
 
@@ -94,7 +94,7 @@ Bot WhatsApp berbasis TypeScript dan Baileys dengan kecerdasan buatan multimodal
 | `LOG_LEVEL` | String | `info` | Tingkat log Pino (`fatal`, `error`, `warn`, `info`, `debug`, `trace`, `silent`) |
 | `BOT_PREFIX` | String | `!` | Awalan pemicu perintah bot |
 | `BOT_OWNER_ID` | String | (Kosong) | JID WhatsApp pemilik bot (contoh: `6281234567890@s.whatsapp.net`) |
-| `BOT_VERSION` | String | `0.2.0` | Versi aktif bot |
+| `BOT_VERSION` | String | `0.3` | Versi aktif bot |
 | `DATABASE_PATH` | String | `./data/anya.db` | Jalur basis data SQLite |
 | `TEMP_DIRECTORY` | String | `./temp` | Direktori file olahan sementara |
 | `SESSION_NAME` | String | `anya-session` | Nama folder kredensial sesi Baileys |

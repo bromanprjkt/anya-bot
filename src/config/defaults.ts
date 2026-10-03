@@ -1,5 +1,5 @@
 export const KONFIGURASI_BAWAAN = {
-  VERSI_BOT: "0.2.0",
+  VERSI_BOT: "0.3",
   AWALAN_PERINTAH: "!",
   TINGKAT_LOG: "info" as const,
   DIREKTORI_SEMENTARA: "./temp",
