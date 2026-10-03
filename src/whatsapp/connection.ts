@@ -37,9 +37,13 @@ export function tanganiPembaruanKoneksi(
     }
 
     const pesan = kesalahan instanceof Error ? kesalahan.message : String(kesalahan);
+    const teksPesanKecil = pesan.toLowerCase();
     const adalahLogout =
-      kodeStatus === DisconnectReason.loggedOut &&
-      pesan.toLowerCase().includes("logged out");
+      kodeStatus === DisconnectReason.loggedOut ||
+      kodeStatus === 401 ||
+      teksPesanKecil.includes("logged out") ||
+      teksPesanKecil.includes("device_removed") ||
+      teksPesanKecil.includes("conflict");
 
     pencatat.warn(
       { kodeStatus, pesan, adalahLogout },
@@ -47,7 +51,7 @@ export function tanganiPembaruanKoneksi(
     );
 
     if (adalahLogout) {
-      pencatat.error("Perangkat keluar (logged out). Hapus sesi sebelum memindai ulang.");
+      pencatat.error("Perangkat keluar (logged out / device removed). Sesi telah kedaluwarsa, silakan hapus sesi dan pindai QR ulang.");
       return {
         harusMenghubungkanUlang: false,
         alasanPenutupan: kodeStatus,

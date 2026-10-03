@@ -1,7 +1,9 @@
+import type { WASocket } from "@whiskeysockets/baileys";
 import { konfigurasiEnv, type KonfigurasiEnv } from "../../config/env.js";
 import { buatPencatat } from "../../utils/logger.js";
 import { cariWeb, bacaHalamanWeb } from "./tools/web-search.js";
 import { repositoriMemoriAi } from "../../repositories/ai-memory-repository.js";
+import { antreanAi, type TingkatPrioritasAi } from "../queue/ai-queue.js";
 
 const pencatat = buatPencatat("LayananAi");
 
@@ -39,6 +41,9 @@ export interface OpsiKonteksObrolan {
   adalahGrup?: boolean;
   idPengguna?: string;
   gambarBase64?: string[];
+  adalahPemilik?: boolean;
+  prioritas?: TingkatPrioritasAi;
+  soket?: WASocket;
 }
 
 interface EntriPanggilanTerurai {
@@ -53,6 +58,10 @@ interface EntriPanggilanTerurai {
 interface KonteksPenggunaAi {
   idPenggunaUnik?: string;
   namaPengguna?: string;
+}
+
+function lepaskanKarakterRegExp(teks: string): string {
+  return teks.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function ekstrakPanggilanAlat(pesanPilihan: any): EntriPanggilanTerurai | null {
@@ -207,10 +216,13 @@ const PROMPT_SISTEM_ANYA =
   "2. Sampaikan solusi secara mengalir dalam kalimat santai tanpa bertele-tele.\n" +
   "3. DILARANG menggunakan kalimat penutup klise khas chatbot AI seperti 'Semoga membantu!', 'Semoga berhasil, Kakak!', 'Ada yang ingin ditanyakan lagi?', dsb. Akhiri balasan secara wajar dan spontan.\n" +
   "4. Gunakan tanda baca standar (titik, koma, tanda kurung). Dilarang memakai tanda strip panjang em-dash (—).\n" +
-  "5. Dalam percakapan grup, kamu mengenali siapa yang berbicara dari label [Nama (+Nomor)]. Ingat konteks obrolan sebelumnya agar nyambung.\n" +
+  "5. PENTING - ATURAN MENYEBUT PENGGUNA DI GRUP: Dalam percakapan grup, identitas peserta berformat [@<nomor> (nama: <Nama>)]. Jika kamu ingin menyapa, memanggil, atau menyebut pengguna di grup, DILARANG menuliskan nama teksnya secara langsung (jangan tulis 'Halo Budi' atau 'Kak Budi'). Kamu WAJIB menyapa atau menyebutnya dengan tag WhatsApp format @<nomor> (contoh: '@6281234567890') agar pengguna tersebut tertag langsung di WhatsApp! Pada chat pribadi (bukan grup), kamu boleh memanggil nama atau Kakak secara normal.\n" +
   "6. Kamu memiliki alat bantu 'cari_web' untuk mencari berita atau informasi terbaru di internet, serta 'baca_web' untuk membuka dan membaca isi lengkap suatu tautan web (URL).\n" +
   "7. PENTING - ATURAN PENCARIAN WEB: Jika pengguna menanyakan tentang suatu software, bahasa pemrograman, library, proyek GitHub, tutorial, atau cara install yang terdengar spesifik, baru, atau belum kamu ketahui dengan pasti, DILARANG MENEBAK BAHWA ITU TIDAK ADA ATAU FIKTIF! Kamu WAJIB memanggil alat 'cari_web' terlebih dahulu untuk mencari informasi dan dokumentasi aslinya di internet.\n" +
-  "8. PENTING - MEMORI PROFIL: Jika lawan bicara memberitahukan informasi penting tentang dirinya (seperti nama, pekerjaan, hobi, teknologi yang dipakai, preferensi, dsb.), panggil alat 'ingat_fakta' agar kamu mengingatnya selamanya.";
+  "8. PENTING - MEMORI PROFIL: Jika lawan bicara memberitahukan informasi penting tentang dirinya (seperti nama, pekerjaan, hobi, teknologi yang dipakai, preferensi, dsb.), panggil alat 'ingat_fakta' agar kamu mengingatnya selamanya.\n" +
+  "9. IDENTITAS PEMILIK & PENCIPTA (OWNER):\n" +
+  "Pemilik, pembuat, dan bos besar dari Anya Bot adalah 'bromanprjkt' (dengan title/julukan 'mau jadi bos'). Jika ada yang bertanya siapa owner, pembuat, pencipta, atau pemilik bot ini, jawablah dengan bangga dan jelas bahwa owner dan bosmu adalah bromanprjkt ('si bos / mau jadi bos')!\n" +
+  "Jika lawan bicaramu ditandai sebagai Bos Owner (bromanprjkt), kenali dan hormati dia secara khusus dengan ceria, setia, dan akrab layaknya berbicara kepada bos besarmu ('Siap Bos bromanprjkt!', 'Heh, Bos mau Anya bantu apa?', 'Waku waku Bos!').";
 
 const SKEMA_ALAT_PENCARIAN_WEB = {
   type: "function" as const,
@@ -274,6 +286,9 @@ const SKEMA_ALAT_INGAT_FAKTA = {
 };
 
 export class LayananAi {
+  private kegagalanPenyediaUtama = 0;
+  private waktuPemutusSirkuitUtama = 0;
+
   constructor(private readonly konfigurasi: KonfigurasiEnv = konfigurasiEnv) {}
 
   private async kirimPermintaan(
@@ -285,42 +300,57 @@ export class LayananAi {
     konteksPengguna?: KonteksPenggunaAi
   ): Promise<string> {
     const endpoint = `${baseUrl.replace(/\/+$/, "")}/chat/completions`;
-    const pengontrol = new AbortController();
-    const batasWaktu = setTimeout(() => pengontrol.abort(), 25000);
+    const maksimalPercobaan = 2;
 
-    const bodyPermintaan: any = {
-      model,
-      messages: pesan,
-      max_tokens: 800,
-      temperature: 0.75,
-    };
+    for (let percobaan = 0; percobaan <= maksimalPercobaan; percobaan++) {
+      const pengontrol = new AbortController();
+      const batasWaktu = setTimeout(() => pengontrol.abort(), 25000);
 
-    if (izinkanAlat) {
-      bodyPermintaan.tools = [
-        SKEMA_ALAT_PENCARIAN_WEB,
-        SKEMA_ALAT_BACA_WEB,
-        SKEMA_ALAT_INGAT_FAKTA,
-      ];
-      bodyPermintaan.tool_choice = "auto";
-    }
+      const bodyPermintaan: any = {
+        model,
+        messages: pesan,
+        max_tokens: 800,
+        temperature: 0.75,
+      };
 
-    try {
-      const respon = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify(bodyPermintaan),
-        signal: pengontrol.signal,
-      });
-
-      if (!respon.ok) {
-        const teksError = await respon.text().catch(() => "");
-        throw new Error(`HTTP ${respon.status}: ${teksError}`);
+      if (izinkanAlat) {
+        bodyPermintaan.tools = [
+          SKEMA_ALAT_PENCARIAN_WEB,
+          SKEMA_ALAT_BACA_WEB,
+          SKEMA_ALAT_INGAT_FAKTA,
+        ];
+        bodyPermintaan.tool_choice = "auto";
       }
 
-      const hasilJson = (await respon.json()) as any;
+      try {
+        const respon = await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify(bodyPermintaan),
+          signal: pengontrol.signal,
+        });
+
+        if (!respon.ok) {
+          const teksError = await respon.text().catch(() => "");
+          const status = respon.status;
+
+          if (
+            (status === 429 || status === 502 || status === 503 || status === 504) &&
+            percobaan < maksimalPercobaan
+          ) {
+            const jeda = Math.min(3000, 800 * Math.pow(2, percobaan) + Math.floor(Math.random() * 400));
+            pencatat.warn({ status, jedaMs: jeda, model }, "Laju API tercapai atau server sibuk, mencoba ulang");
+            await new Promise((r) => setTimeout(r, jeda));
+            continue;
+          }
+
+          throw new Error(`HTTP ${status}: ${teksError}`);
+        }
+
+        const hasilJson = (await respon.json()) as any;
       const pesanPilihan = hasilJson.choices?.[0]?.message;
 
       if (!pesanPilihan) {
@@ -499,10 +529,26 @@ export class LayananAi {
       }
 
       return konten;
+    } catch (kesalahan: any) {
+      if (
+        percobaan < maksimalPercobaan &&
+        (kesalahan.name === "AbortError" ||
+          kesalahan.code === "ECONNRESET" ||
+          kesalahan.code === "ETIMEDOUT")
+      ) {
+        const jeda = 1000 + Math.floor(Math.random() * 500);
+        pencatat.warn({ jedaMs: jeda, kesalahan: kesalahan.message }, "Koneksi jaringan terputus, mencoba ulang");
+        await new Promise((r) => setTimeout(r, jeda));
+        continue;
+      }
+      throw kesalahan;
     } finally {
       clearTimeout(batasWaktu);
     }
   }
+
+  throw new Error("Gagal menghubungi penyedia AI setelah beberapa kali percobaan");
+}
 
   public async tanyaAi(
     idObrolan: string,
@@ -510,17 +556,6 @@ export class LayananAi {
     namaPengirim?: string,
     opsiKonteks?: OpsiKonteksObrolan
   ): Promise<string> {
-    const adalahGrup = opsiKonteks?.adalahGrup ?? idObrolan.endsWith("@g.us");
-    const idPenggunaMentah = opsiKonteks?.idPengguna || (adalahGrup ? "" : idObrolan);
-    const nomorPengguna = (idPenggunaMentah.split("@")[0]?.split(":")[0] || idPenggunaMentah).trim();
-    const namaPanggilan = namaPengirim?.trim() || "Kakak";
-    const idPenggunaUnik = nomorPengguna || idPenggunaMentah;
-
-    const idSesi = adalahGrup
-      ? idObrolan
-      : (nomorPengguna || idObrolan);
-    const tipeObrolan: "grup" | "pribadi" = adalahGrup ? "grup" : "pribadi";
-
     const kueriKecil = pesanPengguna.toLowerCase().trim();
     if (
       kueriKecil === "!ai reset profil" ||
@@ -528,6 +563,10 @@ export class LayananAi {
       kueriKecil === "lupa tentang aku" ||
       kueriKecil === "hapus profil"
     ) {
+      const adalahGrup = opsiKonteks?.adalahGrup ?? idObrolan.endsWith("@g.us");
+      const idPenggunaMentah = opsiKonteks?.idPengguna || (adalahGrup ? "" : idObrolan);
+      const nomorPengguna = (idPenggunaMentah.split("@")[0]?.split(":")[0] || idPenggunaMentah).replace(/[^0-9]/g, "").trim();
+      const idPenggunaUnik = nomorPengguna || idPenggunaMentah;
       if (idPenggunaUnik) {
         repositoriMemoriAi.hapusFaktaPengguna(idPenggunaUnik);
       }
@@ -540,9 +579,67 @@ export class LayananAi {
       kueriKecil === "reset ingatan" ||
       kueriKecil === "!ai reset"
     ) {
+      const adalahGrup = opsiKonteks?.adalahGrup ?? idObrolan.endsWith("@g.us");
+      const idPenggunaMentah = opsiKonteks?.idPengguna || (adalahGrup ? "" : idObrolan);
+      const nomorPengguna = (idPenggunaMentah.split("@")[0]?.split(":")[0] || idPenggunaMentah).replace(/[^0-9]/g, "").trim();
+      const idSesi = adalahGrup ? idObrolan : (nomorPengguna || idObrolan);
       repositoriMemoriAi.hapusRiwayat(idSesi);
       return "Heh! Seluruh ingatan percakapan kita di sini sudah Anya bersihkan ya Kak. Anya siap mengobrol dari awal lagi, waku waku!";
     }
+
+    const adalahGrup = opsiKonteks?.adalahGrup ?? idObrolan.endsWith("@g.us");
+    const idPenggunaMentah = opsiKonteks?.idPengguna || (adalahGrup ? "" : idObrolan);
+    const nomorPengguna = (idPenggunaMentah.split("@")[0]?.split(":")[0] || idPenggunaMentah).replace(/[^0-9]/g, "").trim();
+    const nomorPemilikNormal = this.konfigurasi.idPemilikBot.replace(/[^0-9]/g, "");
+    const adalahPemilik =
+      opsiKonteks?.adalahPemilik ??
+      Boolean(nomorPemilikNormal && nomorPengguna.startsWith(nomorPemilikNormal));
+    const idPenggunaUnik = nomorPengguna || idPenggunaMentah;
+
+    const adaMedia = Boolean(opsiKonteks?.gambarBase64 && opsiKonteks.gambarBase64.length > 0);
+    const bisaDiCache = !adaMedia && pesanPengguna.length <= 150;
+    const kunciCache = bisaDiCache
+      ? `${adalahGrup ? idObrolan : idPenggunaUnik}:${pesanPengguna.trim().toLowerCase()}`
+      : undefined;
+
+    return antreanAi.antrekan(
+      () =>
+        this.prosesLogikaTanyaAi(
+          idObrolan,
+          pesanPengguna,
+          namaPengirim,
+          opsiKonteks,
+          adalahGrup,
+          nomorPengguna,
+          adalahPemilik,
+          idPenggunaUnik
+        ),
+      {
+        idObrolan,
+        idPengguna: idPenggunaUnik,
+        adalahPemilik,
+        prioritas: opsiKonteks?.prioritas,
+        soket: opsiKonteks?.soket,
+        bisaDiCache,
+        kunciCache,
+      }
+    );
+  }
+
+  private async prosesLogikaTanyaAi(
+    idObrolan: string,
+    pesanPengguna: string,
+    namaPengirim: string | undefined,
+    opsiKonteks: OpsiKonteksObrolan | undefined,
+    adalahGrup: boolean,
+    nomorPengguna: string,
+    adalahPemilik: boolean,
+    idPenggunaUnik: string
+  ): Promise<string> {
+    const idPenggunaMentah = opsiKonteks?.idPengguna || (adalahGrup ? "" : idObrolan);
+    const namaPanggilan = adalahPemilik ? "bromanprjkt" : (namaPengirim?.trim() || "Kakak");
+    const idSesi = adalahGrup ? idObrolan : (nomorPengguna || idObrolan);
+    const tipeObrolan: "grup" | "pribadi" = adalahGrup ? "grup" : "pribadi";
 
     const riwayatTersimpan = repositoriMemoriAi.ambilRiwayat(idSesi, 16);
     const faktaPengguna = idPenggunaUnik
@@ -552,6 +649,14 @@ export class LayananAi {
     const pesanUntukModel: PesanAi[] = [
       { role: "system", content: PROMPT_SISTEM_ANYA },
     ];
+
+    if (adalahPemilik) {
+      pesanUntukModel.push({
+        role: "system",
+        content:
+          "PERHATIAN KHUSUS: Lawan bicara saat ini adalah 'bromanprjkt' (Pemilik, Pembuat, dan Bos Besar Anya Bot / title: mau jadi bos). Hormati, kenali, dan sapalah dia sebagai Bos bromanprjkt dengan ceria dan setia!",
+      });
+    }
 
     if (faktaPengguna.length > 0) {
       const teksFakta = faktaPengguna
@@ -569,15 +674,19 @@ export class LayananAi {
       } else {
         const label =
           entri.tipeObrolan === "grup"
-            ? `[${entri.namaPengguna} (+${entri.idPengguna.replace(/[^0-9]/g, "")})]: ${entri.konten}`
+            ? `[@${entri.idPengguna.replace(/[^0-9]/g, "")} (nama: ${entri.namaPengguna})]: ${entri.konten}`
             : `[${entri.namaPengguna}]: ${entri.konten}`;
         pesanUntukModel.push({ role: "user", content: label });
       }
     }
 
     const labelUserSekarang = adalahGrup
-      ? `[${namaPanggilan} (+${nomorPengguna})]: ${pesanPengguna}`
-      : `[${namaPanggilan}]: ${pesanPengguna}`;
+      ? (adalahPemilik
+          ? `[@${nomorPengguna} (Bos Owner: bromanprjkt)]: ${pesanPengguna}`
+          : `[@${nomorPengguna} (nama: ${namaPanggilan})]: ${pesanPengguna}`)
+      : (adalahPemilik
+          ? `[Bos Owner (bromanprjkt)]: ${pesanPengguna}`
+          : `[${namaPanggilan}]: ${pesanPengguna}`);
 
     let kontenUserSekarang: KontenPesanAi = labelUserSekarang;
 
@@ -601,9 +710,10 @@ export class LayananAi {
       namaPengguna: namaPanggilan,
     };
 
+    const sirkuitUtamaTerbuka = this.waktuPemutusSirkuitUtama > Date.now();
     let jawaban = "";
 
-    if (this.konfigurasi.aiApiKey) {
+    if (this.konfigurasi.aiApiKey && !sirkuitUtamaTerbuka) {
       try {
         jawaban = await this.kirimPermintaan(
           this.konfigurasi.aiBaseUrl,
@@ -613,7 +723,17 @@ export class LayananAi {
           true,
           konteksPengguna
         );
+        this.kegagalanPenyediaUtama = 0;
+        this.waktuPemutusSirkuitUtama = 0;
       } catch (kesalahanUtama) {
+        this.kegagalanPenyediaUtama++;
+        if (this.kegagalanPenyediaUtama >= 3) {
+          this.waktuPemutusSirkuitUtama = Date.now() + 30000;
+          pencatat.warn(
+            { kegagalan: this.kegagalanPenyediaUtama },
+            "Pemutus sirkuit aktif: penyedia AI utama dialihkan ke cadangan selama 30 detik"
+          );
+        }
         pencatat.warn(
           { kesalahan: kesalahanUtama, model: this.konfigurasi.aiModel },
           "Penyedia AI utama gagal, mencoba penyedia cadangan"
@@ -641,6 +761,20 @@ export class LayananAi {
 
     if (!jawaban) {
       return "Maaf Kak, kepala Anya lagi pusing mikirnya... Coba tanya lagi nanti ya, waku waku!";
+    }
+
+    if (adalahGrup && nomorPengguna) {
+      if (adalahPemilik) {
+        jawaban = jawaban.replace(/@(bromanprjkt)\b/gi, `@${nomorPengguna}`);
+      }
+      if (namaPanggilan && namaPanggilan !== "Kakak" && namaPanggilan.length >= 2) {
+        const polaNama = lepaskanKarakterRegExp(namaPanggilan);
+        jawaban = jawaban.replace(new RegExp(`@${polaNama}\\b`, "gi"), `@${nomorPengguna}`);
+        jawaban = jawaban.replace(
+          new RegExp(`\\b(Halo|Hai|Kak|Kakak|Hei|Heh)\\s+${polaNama}\\b`, "gi"),
+          `$1 @${nomorPengguna}`
+        );
+      }
     }
 
     repositoriMemoriAi.simpanPesan(

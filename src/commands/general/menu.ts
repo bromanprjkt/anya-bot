@@ -1,5 +1,3 @@
-import fs from "node:fs";
-import path from "node:path";
 import type { PerintahBot, RegistriPerintah, KategoriPerintah } from "../../core/command-registry.js";
 import type { KonteksPerintah } from "../../core/message-context.js";
 import { periksaIzinPerintah } from "../../core/permissions.js";
@@ -7,39 +5,26 @@ import { konfigurasiEnv } from "../../config/env.js";
 
 const URL_BANNER =
   "https://raw.githubusercontent.com/bromanprjkt/anya-bot/refs/heads/main/banner.png";
-const JALUR_BANNER_LOKAL = path.resolve(process.cwd(), "banner.png");
-let memoriBufferBanner: Buffer | null = null;
 
-async function ambilBufferBanner(): Promise<Buffer | null> {
-  if (memoriBufferBanner) {
-    return memoriBufferBanner;
-  }
+let bufferBannerMemori: Buffer | null = null;
 
-  if (fs.existsSync(JALUR_BANNER_LOKAL)) {
-    try {
-      memoriBufferBanner = fs.readFileSync(JALUR_BANNER_LOKAL);
-      return memoriBufferBanner;
-    } catch {
-    }
-  }
-
+async function ambilBufferBanner(): Promise<Buffer | undefined> {
+  if (bufferBannerMemori) return bufferBannerMemori;
   try {
     const respon = await fetch(URL_BANNER);
     if (respon.ok) {
-      const buffer = Buffer.from(await respon.arrayBuffer());
-      memoriBufferBanner = buffer;
-      return buffer;
+      bufferBannerMemori = Buffer.from(await respon.arrayBuffer());
+      return bufferBannerMemori;
     }
   } catch {
   }
-
-  return null;
+  return undefined;
 }
 
 export function buatPerintahMenu(registri: RegistriPerintah): PerintahBot {
   return {
     nama: "menu",
-    alias: ["bantuan"],
+    alias: ["help", "bantuan"],
     deskripsi: "Menampilkan daftar perintah yang dapat Anda gunakan",
     kategori: "general",
     jalankan: async (konteks: KonteksPerintah) => {
@@ -74,17 +59,26 @@ export function buatPerintahMenu(registri: RegistriPerintah): PerintahBot {
         teksMenu += `\n`;
       }
 
-      teksMenu += `Ketik \`${awalan}help <nama_perintah>\` untuk petunjuk detail.`;
+      teksMenu += `Gunakan awalan \`${awalan}\` di depan nama perintah.`;
 
-      const bufferBanner = await ambilBufferBanner();
-
-      if (bufferBanner && typeof konteks.soket?.sendMessage === "function") {
+      if (typeof konteks.soket?.sendMessage === "function") {
         try {
+          const bufferBanner = await ambilBufferBanner();
           await konteks.soket.sendMessage(
             konteks.idObrolan,
             {
-              image: bufferBanner,
-              caption: teksMenu.trim(),
+              text: teksMenu.trim(),
+              contextInfo: {
+                externalAdReply: {
+                  title: `Anya Bot (v${konfigurasiEnv.versiBot})`,
+                  body: "bromanprjkt • mau jadi bos",
+                  mediaType: 1,
+                  thumbnailUrl: URL_BANNER,
+                  ...(bufferBanner ? { thumbnail: bufferBanner } : {}),
+                  sourceUrl: "https://github.com/bromanprjkt/anya-bot",
+                  renderLargerThumbnail: true,
+                },
+              },
             },
             { quoted: konteks.pesanMentah }
           );

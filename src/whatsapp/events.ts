@@ -27,7 +27,8 @@ export function daftarkanAcaraWhatsApp(
   penghematKredensial: () => Promise<void>,
   padaKoneksiTerputus: () => void,
   pendengarPesan?: PendengarAcaraPesan,
-  pendengarGrup?: PendengarAcaraGrup
+  pendengarGrup?: PendengarAcaraGrup,
+  padaSesiKeluar?: () => Promise<void>
 ): void {
   const penyalur: BaileysEventEmitter = soket.ev;
 
@@ -41,6 +42,8 @@ export function daftarkanAcaraWhatsApp(
     const hasil = tanganiPembaruanKoneksi(pembaruan);
     if (hasil.harusMenghubungkanUlang) {
       padaKoneksiTerputus();
+    } else if (hasil.alasanPenutupan === 401 && padaSesiKeluar) {
+      void padaSesiKeluar().catch(() => {});
     }
   });
 

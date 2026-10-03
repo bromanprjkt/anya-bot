@@ -46,6 +46,10 @@ const skemaEnv = z.object({
   AI_FALLBACK_BASE_URL: z.string().default(KONFIGURASI_BAWAAN.AI_FALLBACK_BASE_URL),
   AI_FALLBACK_API_KEY: z.string().default(KONFIGURASI_BAWAAN.AI_FALLBACK_API_KEY),
   AI_FALLBACK_MODEL: z.string().default(KONFIGURASI_BAWAAN.AI_FALLBACK_MODEL),
+  AI_MAX_CONCURRENT: z.coerce.number().int().positive().default(KONFIGURASI_BAWAAN.AI_BATAS_KONKURENSI),
+  AI_QUEUE_CAPACITY: z.coerce.number().int().positive().default(KONFIGURASI_BAWAAN.AI_BATAS_ANTREAN),
+  AI_MAX_PER_USER: z.coerce.number().int().positive().default(KONFIGURASI_BAWAAN.AI_BATAS_AKTIF_PER_PENGGUNA),
+  AI_QUEUE_TIMEOUT_MS: z.coerce.number().int().positive().default(KONFIGURASI_BAWAAN.AI_BATAS_WAKTU_ANTREAN_MS),
 });
 
 export interface KonfigurasiEnv {
@@ -68,6 +72,10 @@ export interface KonfigurasiEnv {
   aiFallbackBaseUrl: string;
   aiFallbackApiKey: string;
   aiFallbackModel: string;
+  aiBatasKonkurensi: number;
+  aiBatasAntrean: number;
+  aiBatasPerPengguna: number;
+  aiBatasWaktuAntreanMs: number;
 }
 
 export function uraiKonfigurasiEnv(
@@ -106,6 +114,10 @@ export function uraiKonfigurasiEnv(
     aiFallbackBaseUrl: variabelLingkungan.AI_REPLY_FALLBACK_BASE_URL || data.AI_FALLBACK_BASE_URL,
     aiFallbackApiKey: variabelLingkungan.AI_REPLY_FALLBACK_API_KEY || data.AI_FALLBACK_API_KEY,
     aiFallbackModel: variabelLingkungan.AI_REPLY_FALLBACK_MODEL || data.AI_FALLBACK_MODEL,
+    aiBatasKonkurensi: data.AI_MAX_CONCURRENT,
+    aiBatasAntrean: data.AI_QUEUE_CAPACITY,
+    aiBatasPerPengguna: data.AI_MAX_PER_USER,
+    aiBatasWaktuAntreanMs: data.AI_QUEUE_TIMEOUT_MS,
   };
 }
 

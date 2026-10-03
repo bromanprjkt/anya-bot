@@ -27,11 +27,9 @@ import {
 import { perintahPing } from "./commands/general/ping.js";
 import { perintahOwner } from "./commands/general/owner.js";
 import { buatPerintahMenu } from "./commands/general/menu.js";
-import { buatPerintahHelp } from "./commands/general/help.js";
 import { perintahAi } from "./commands/ai/ai.js";
 
 import { perintahSticker } from "./commands/media/sticker.js";
-import { perintahToImg } from "./commands/media/toimg.js";
 import { perintahTake } from "./commands/media/take.js";
 import { perintahQC } from "./commands/media/qc.js";
 import { perintahTTP } from "./commands/media/ttp.js";
@@ -83,11 +81,9 @@ export class AplikasiAnya {
     this.registriPerintah.daftarkan(perintahPing);
     this.registriPerintah.daftarkan(perintahOwner);
     this.registriPerintah.daftarkan(buatPerintahMenu(this.registriPerintah));
-    this.registriPerintah.daftarkan(buatPerintahHelp(this.registriPerintah));
     this.registriPerintah.daftarkan(perintahAi);
 
     this.registriPerintah.daftarkan(perintahSticker);
-    this.registriPerintah.daftarkan(perintahToImg);
     this.registriPerintah.daftarkan(perintahTake);
     this.registriPerintah.daftarkan(perintahQC);
     this.registriPerintah.daftarkan(perintahTTP);

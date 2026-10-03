@@ -90,6 +90,10 @@ export function ambilBasisData(jalurKustom?: string): Database.Database {
   const db = new Database(jalurDb);
   db.pragma("journal_mode = WAL");
   db.pragma("foreign_keys = ON");
+  db.pragma("busy_timeout = 15000");
+  db.pragma("synchronous = NORMAL");
+  db.pragma("cache_size = -64000");
+  db.pragma("temp_store = MEMORY");
 
   inisialisasiSkema(db);
 

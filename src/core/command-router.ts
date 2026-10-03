@@ -12,6 +12,23 @@ import { transkripsikanPesanSuara } from "../services/ai/tools/audio-transcriber
 
 const pencatat = buatPencatat("PerutePerintah");
 
+function ekstrakMentions(teks: string, pengirimTambahan?: string): string[] {
+  const himpunanJid = new Set<string>();
+  const cocok = teks.matchAll(/@(\d{5,16})/g);
+  for (const c of cocok) {
+    if (c[1]) {
+      himpunanJid.add(`${c[1]}@s.whatsapp.net`);
+    }
+  }
+  if (pengirimTambahan && pengirimTambahan.includes("@s.whatsapp.net")) {
+    const nomor = pengirimTambahan.split("@")[0]?.split(":")[0];
+    if (nomor && teks.includes(`@${nomor}`)) {
+      himpunanJid.add(`${nomor}@s.whatsapp.net`);
+    }
+  }
+  return Array.from(himpunanJid);
+}
+
 export class PerutePerintah {
   constructor(
     private readonly registri: RegistriPerintah,
@@ -19,8 +36,35 @@ export class PerutePerintah {
   ) {}
 
   public ekstrakTeksPesan(pesan: WAMessage): string {
-    const isi = pesan.message;
-    if (!isi) return "";
+    const isiMentah = pesan.message;
+    if (!isiMentah) return "";
+
+    const isi =
+      isiMentah.viewOnceMessage?.message ||
+      isiMentah.viewOnceMessageV2?.message ||
+      isiMentah.documentWithCaptionMessage?.message ||
+      isiMentah;
+
+    const responInteraktif =
+      isi.interactiveResponseMessage?.nativeFlowResponseMessage?.paramsJson;
+    if (responInteraktif) {
+      try {
+        const data = JSON.parse(responInteraktif);
+        if (data.id) return String(data.id).trim();
+      } catch {}
+    }
+
+    if (isi.templateButtonReplyMessage?.selectedId) {
+      return isi.templateButtonReplyMessage.selectedId.trim();
+    }
+
+    if (isi.buttonsResponseMessage?.selectedButtonId) {
+      return isi.buttonsResponseMessage.selectedButtonId.trim();
+    }
+
+    if (isi.listResponseMessage?.singleSelectReply?.selectedRowId) {
+      return isi.listResponseMessage.singleSelectReply.selectedRowId.trim();
+    }
 
     return (
       isi.conversation ??
@@ -43,6 +87,13 @@ export class PerutePerintah {
       ? (pesan.key.participant ?? pesan.participant ?? "")
       : idObrolan;
     const namaPengirim = pesan.pushName ?? "Pengguna";
+    const nomorPemilikNormal = this.konfigurasi.idPemilikBot
+      ? this.konfigurasi.idPemilikBot.replace(/[^0-9]/g, "")
+      : "";
+    const nomorPengirim = idPengirim.replace(/[^0-9]/g, "");
+    const adalahPemilik = Boolean(
+      nomorPemilikNormal && nomorPengirim.startsWith(nomorPemilikNormal)
+    );
 
     const awalan = this.konfigurasi.awalanPerintah;
 
@@ -151,9 +202,20 @@ export class PerutePerintah {
             adalahGrup,
             idPengguna: idPengirim,
             gambarBase64,
+            adalahPemilik,
+            prioritas: 3,
+            soket,
           }
         );
-        await soket.sendMessage(idObrolan, { text: balasanAi }, { quoted: pesan });
+        const daftarMention = ekstrakMentions(balasanAi, idPengirim);
+        await soket.sendMessage(
+          idObrolan,
+          {
+            text: balasanAi,
+            mentions: daftarMention.length > 0 ? daftarMention : undefined,
+          },
+          { quoted: pesan }
+        );
       } catch (kesalahan) {
         pencatat.error({ kesalahan, idObrolan }, "Gagal memproses percakapan santai AI");
       }
@@ -198,16 +260,16 @@ export class PerutePerintah {
       }
     }
 
-    const nomorPemilikNormal = this.konfigurasi.idPemilikBot
-      ? this.konfigurasi.idPemilikBot.replace(/[^0-9]/g, "")
-      : "";
-    const nomorPengirim = idPengirim.replace(/[^0-9]/g, "");
-    const adalahPemilik = Boolean(
-      nomorPemilikNormal && nomorPengirim.startsWith(nomorPemilikNormal)
-    );
-
     const balas = async (isiBalasan: string): Promise<void> => {
-      await soket.sendMessage(idObrolan, { text: isiBalasan }, { quoted: pesan });
+      const daftarMention = ekstrakMentions(isiBalasan, idPengirim);
+      await soket.sendMessage(
+        idObrolan,
+        {
+          text: isiBalasan,
+          mentions: daftarMention.length > 0 ? daftarMention : undefined,
+        },
+        { quoted: pesan }
+      );
     };
 
     const unduhMedia = async (): Promise<Buffer | null> => {

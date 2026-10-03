@@ -3,14 +3,14 @@ import type { KonteksPerintah } from "../../core/message-context.js";
 import { layananStiker } from "../../services/media/sticker-service.js";
 
 export const perintahTake: PerintahBot = {
-  nama: "take",
-  alias: ["colong"],
+  nama: "colong",
+  alias: ["take", "toimg"],
   deskripsi: "Mengambil dan mengubah stiker menjadi foto",
   kategori: "sticker",
   jalankan: async (konteks: KonteksPerintah) => {
     const bufferMedia = await konteks.unduhMedia();
     if (!bufferMedia) {
-      await konteks.balas("Balas (reply) stiker yang ingin diambil menjadi foto dengan !take atau !colong");
+      await konteks.balas("Balas (reply) stiker yang ingin diambil menjadi foto dengan !colong atau !toimg");
       return;
     }
 

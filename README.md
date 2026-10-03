@@ -24,8 +24,7 @@ Bot WhatsApp berbasis TypeScript dan Baileys dengan kecerdasan buatan multimodal
 
 - **Stiker & Media**:
   - Konversi gambar dan video singkat (durasi < 10 detik) ke stiker WebP statis maupun animasi.
-  - Konversi stiker WebP kembali menjadi gambar PNG (`!toimg`).
-  - Ekstraksi stiker kutipan ke foto atau ubah metadata EXIF stiker (`!take` / `!colong`).
+  - Ekstraksi stiker kembali menjadi foto atau gambar PNG (`!colong` / `!take`).
   - Quote Chat generator (`!qc`) dengan gelembung obrolan WhatsApp.
   - Teks ke stiker (`!ttp`) dengan latar putih, teks tebal, dan auto-wrapping baris otomatis.
   - Metadata stiker bawaan dengan tanda penerbit `github@bromanprjkt`.
@@ -115,16 +114,14 @@ Bot WhatsApp berbasis TypeScript dan Baileys dengan kecerdasan buatan multimodal
 ## 5. Daftar Perintah
 
 ### Umum
-- `!menu`: Menampilkan menu perintah sesuai izin akses pengguna beserta banner bot.
+- `!menu` / `!help`: Menampilkan menu perintah sesuai izin akses pengguna beserta banner bot.
 - `!ai <pertanyaan>` / `!tanya` / `!ask` / `!anya`: Mengobrol interaktif dengan AI persona Anya Forger (bisa juga langsung panggil `anya ...` tanpa awalan).
 - `!ping`: Cek latensi dan waktu aktif bot.
-- `!owner`: Kontak nomor pemilik bot.
-- `!help [perintah]`: Panduan penggunaan bot atau informasi detail perintah.
+- `!owner`: Mengirimkan kartu kontak WhatsApp pemilik bot (`bromanprjkt` - title: mau jadi bos).
 
 ### Stiker & Media
 - `!sticker` / `!s`: Buat stiker dari gambar atau video (maksimal 10 detik).
-- `!toimg`: Ubah stiker menjadi foto/gambar PNG.
-- `!take` / `!colong`: Ubah stiker kutipan jadi foto atau ganti metadata stiker.
+- `!colong` / `!take`: Ubah stiker menjadi foto/gambar PNG (alias: `!toimg`).
 - `!qc <teks>`: Buat stiker Quote Chat percakapan WhatsApp.
 - `!ttp <teks>`: Buat stiker teks dengan latar putih.
 - `!smeme <teks atas> | <teks bawah>` / `!stikermeme`: Buat stiker meme dari gambar atau stiker.

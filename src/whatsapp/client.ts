@@ -83,7 +83,10 @@ export class KlienWhatsApp {
         this.pengelolaSesi.simpanKredensial,
         () => this.jadwalkanKoneksiUlang(),
         this.pendengarPesan,
-        this.pendengarGrup
+        this.pendengarGrup,
+        async () => {
+          await this.pengelolaSesi?.bersihkanSesi();
+        }
       );
     } catch (kesalahan) {
       this.pencatat.error({ kesalahan }, "Gagal menginisialisasi soket WhatsApp");

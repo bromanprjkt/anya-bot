@@ -64,6 +64,9 @@ export const perintahAi: PerintahBot = {
           adalahGrup: konteks.adalahGrup,
           idPengguna: konteks.idPengguna,
           gambarBase64,
+          adalahPemilik: konteks.adalahPemilik,
+          prioritas: 2,
+          soket: konteks.soket,
         }
       );
 
